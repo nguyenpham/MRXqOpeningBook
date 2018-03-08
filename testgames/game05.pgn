@@ -1,0 +1,29 @@
+[Event "Asia rules 24"]
+[Site "FOM-RHKA8J2A5WY"]
+[Date "2010.05.07"]
+[Round "54"]
+[White "-"]
+[Black "-"]
+[Result "1/2-1/2"]
+[Variant "xiangqi"]
+[FEN "3k1a1cC/4a4/4e4/9/6PP1/3C5/2p1r4/4E4/4A4/4KAE2 w 0 1"]
+[SetUp "1"]
+
+{--------------
+. . . k . a . c C
+. . . . a . . . .
+. . . . e . . . .
+. . . . . . . . .
+. . . . . . P P .
+. . . C . . . . .
+. . p . r . . . .
+. . . . E . . . .
+. . . . A . . . .
+. . . . K A E . .
+white to play
+--------------}
+1. Ch4 Cg9 2. Cg4 Ch9 3. Ch4 Cg9 4. Cg4 Ch9 5. Ch4
+{This is not a scarifice, because the black Cannon is pinned. 
+But the latter is protected by the Elephant on one of the moves, 
+so this is not a perpetual chase either.}
+1/2-1/2

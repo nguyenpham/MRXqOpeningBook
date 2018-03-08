@@ -1,0 +1,22 @@
+[Event "Computer Chess Game"]
+[Site "SCHAAK_PC"]
+[Date "2010.07.09"]
+[Round "1.13"]
+[White "Yssy"]
+[Black "Saola 1.7"]
+[Result "1-0"]
+[TimeControl "40/600"]
+[Variant "xiangqi"]
+[Number "125"]
+
+1. Cbg2 Hc7 2. Hc2 c5 3. Rb0 Rb9 4. Rb4 Ege7 5. Ege2 Hf8 6. Hi2 Ca7 7. Rxb9
+Hxb9 8. Afe1 Ci7 9. Rh0 Ri8 10. c4 cxc4 11. Exc4 Hc7 12. g4 Cxi3 13. Ch6
+Caxa3 14. Hxa3 Cxa3 15. Rh5 Ca5 16. Rf5 Rh8 17. Ch4 i5 18. Cgh2 Cc5 19.
+E0a2 Ri8 20. Ch5 Cxh5 21. Rxh5 e5 22. Cc2 Hce6 23. Rxe5 Rh8 24. Rxi5 Rh2
+25. Ce2 Hf4 26. Cf2 Hh7 27. Ri4 Hd3 28. Cd2 Rg2 29. Ec0 Ade8 30. Ri3 Hf6
+31. Hg3 Hxg4 32. Rh3 Ri2 33. Hh1 g5 34. Rg3 Ri0+ 35. Af0 Hb2 36. E0e2 Ri1
+37. Hf2 Rd1 38. Afe1 He5 39. e4 Hc6 40. Rb3 Hc0 41. Ca2 Ha1 42. Rb6 Hd4 43.
+Rxa6 Hac2 44. Rd6 Ra1 45. Hh1 Rb1 46. Hg3 Rb5 47. Hi4 Ad7 48. Hh6 Afe8 49.
+Ca4 Rb4 50. Ca5 Rb5 51. Ca4 Hb4 52. Ca9+ Rb9 53. Ca5 Rb5 54. Ca9+ Rb9 55.
+Ca5 Rb5 56. Ca9+ Rb9
+{Xboard adjudication: perpetual chasing} 1-0
