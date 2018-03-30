@@ -1,26 +1,10 @@
-/*
- This file is part of MoonRiver Xiangqi Opening Book, distributed under MIT license.
-
- Copyright (c) 2018 Nguyen Hong Pham
-
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
- */
+//
+//  OpBookBuilder.cpp
+//  Opening
+//
+//  Created by Tony Pham on 7/3/18.
+//  Copyright © 2018 Softgaroo. All rights reserved.
+//
 
 #include "OpBookBuilder.h"
 #include "GameReader.h"
@@ -40,23 +24,20 @@ void OpBookBuilder::create(std::map<std::string, std::string> paramMap) {
         create(it->second, paramMap);
     }
 
-    std::string bookPath;
     it = paramMap.find("out");
     if (it == paramMap.end() || it->second.empty()) {
-        bookPath = "./openingbook.xob";
-    } else {
-        bookPath = it->second;
+        return;
     }
 
     if (header.size[0] + header.size[1] > 0) {
-        createSave(bookPath, paramMap);
+        createSave(it->second, paramMap);
     } else if (openingVerbose) {
         std::cerr << "Error: book is empty" << std::endl;
     }
 }
 
-void OpBookBuilder::create(const std::vector<std::string>& folderVec, const std::map<std::string, std::string>& paramMap)
-{
+void OpBookBuilder::create(const std::vector<std::string>& folderVec, const std::map<std::string, std::string>& paramMap) {
+
     for(auto && folder : folderVec) {
         std::vector<std::string> pathVec = listdir(folder);
         for(auto && path : pathVec) {
@@ -65,8 +46,7 @@ void OpBookBuilder::create(const std::vector<std::string>& folderVec, const std:
     }
 }
 
-void OpBookBuilder::create(const std::string& inputPath, const std::map<std::string, std::string>& paramMap)
-{
+void OpBookBuilder::create(const std::string& inputPath, const std::map<std::string, std::string>& paramMap) {
     if (openingVerbose) {
         std::cout << "\tgame: " << inputPath << std::endl;
     }
@@ -117,7 +97,7 @@ void OpBookBuilder::create(const std::string& inputPath, const std::map<std::str
     while(gameReader.nextGame(board)) {
         if (board.getHistList().size() < minply) {
             if (openingVerbose) {
-                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << " - game too short" << std::endl;
+                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << ". Game too short" << std::endl;
             }
             continue;
         }
@@ -136,13 +116,14 @@ void OpBookBuilder::create(const std::string& inputPath, const std::map<std::str
 
         if (workingSide == Side::none) {
             if (openingVerbose) {
-                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << " - result is not suitable" << std::endl;
+                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << ". Result is not right" << std::endl;
             }
             continue;
         }
 
         std::vector<Move> moves;
         for(auto && hist : board.getHistList()) {
+//            moveList.add(hist.move);
             moves.push_back(hist.move);
         }
 
@@ -152,7 +133,7 @@ void OpBookBuilder::create(const std::string& inputPath, const std::map<std::str
 
         if (board.key() != originHashKey) {
             if (openingVerbose) {
-                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << " - not from the origin" << std::endl;
+                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << ". It is not from the origin" << std::endl;
             }
             continue;
         }
@@ -197,6 +178,12 @@ void OpBookBuilder::create_checkFlipping(OpeningBoard& board, std::vector<Move>&
 
     if (needHorizontalFlip) {
         board.flip(opening::FlipMode::horizontal);
+//        for(int i = 0; i < moveList.end; i++) {
+//            auto move = moveList.list + i;
+//            move->from = OpeningBoard::flip(move->from, opening::FlipMode::horizontal);
+//            move->dest = OpeningBoard::flip(move->dest, opening::FlipMode::horizontal);
+//        }
+
         for(auto && move : moves) {
             move.from = OpeningBoard::flip(move.from, opening::FlipMode::horizontal);
             move.dest = OpeningBoard::flip(move.dest, opening::FlipMode::horizontal);
@@ -261,6 +248,7 @@ bool OpBookBuilder::create_add(const OpeningBoard& board)
         }
         free(tmpBuf);
     } else {
+//        std::cout << "idx = " << idx << ", key = " << key << ", ket at 0 = " << bookData[sd][0].key() << ",  sz = " << header.size[sd] << std::endl;
         for(i64 i = header.size[sd]; i > idx; i--) {
             bookData[sd][i] = bookData[sd][i - 1];
         }
@@ -269,13 +257,76 @@ bool OpBookBuilder::create_add(const OpeningBoard& board)
     header.size[sd]++;
     bookData[sd][idx].incValue(key);
 
+//    if (header.size[sd]) {
+//        for (i64 i = 0; i < header.size[sd]; i++) {
+//            std::cout << i << ", " << bookData[sd][i].key() << ", val = " << bookData[sd][i].value << std::endl;
+//        }
+//    }
+//    assert(verifyData(sd));
+
     return true;
 }
+
+//void OpBookBuilder::create_setupAllChildrenValues() {
+//    for(int sd = 0; sd < 2; sd++) {
+//        for(int idx = 0; idx < header.size[sd]; idx++) {
+//            create_setupChildrenValues(idx, sd);
+//        }
+//    }
+//}
+//
+//void OpBookBuilder::create_setupChildrenValues(int idx, int sd) {
+//    OpeningBoard board;
+//    board.pieceList_setupBoard((const int8_t *)creatingBookData[sd][idx].pieceList);
+//    board.initHashKey();
+//    board.side = static_cast<Side>(sd);
+//    create_setupChildrenValues(board);
+//}
+//
+//void OpBookBuilder::create_setupChildrenValues(OpeningBoard& board) {
+//    opening::MoveList moveList;
+//    board.gen(moveList, board.side, false);
+//    int sd = static_cast<int>(board.side);
+//
+//    std::vector<std::pair<int, u32>> idxhitVec;
+//
+//    Hist hist;
+//    for(int i = 0; i < moveList.end; i++) {
+//        auto move = moveList.list[i];
+//        board.make(move, hist);
+//
+//        auto key = board.key();
+//
+//        i64 newIdx = find(key, (const char*)creatingBookData[sd], header.size[sd], sizeof(CreatingBookItem));
+//        if (newIdx >= 0) {
+//            std::pair<u64, u32> idxhit;
+//            idxhit.first = newIdx;
+//            idxhit.second = creatingBookData[sd][newIdx].hit();
+//            idxhitVec.push_back(idxhit);
+//        }
+//        board.takeBack(hist);
+//    }
+//
+//    if (idxhitVec.empty()) {
+//        return;
+//    }
+//
+//    std::sort(idxhitVec.begin(), idxhitVec.end(), [](const std::pair<int, u32> & a, const std::pair<int, u32> & b) -> bool {
+//        return a.second < b.second;
+//    });
+//
+//    const u16 IncValue = 10;
+//    for(int i = 0; i < idxhitVec.size(); i++) {
+//        auto idx = idxhitVec[i].first; assert(idx >= 0 && idx < header.size[sd]);
+//        creatingBookData[sd][idx].value = std::max(creatingBookData[sd][idx].value, (u16)((i + 1) * IncValue));
+//    }
+//}
 
 bool OpBookBuilder::createSave(const std::string& path_, const std::map<std::string, std::string>& paramMap) {
     path = path_;
 
     std::ofstream outfile (path_, std::ios::binary);
+    //    outfile.seekp(0);
 
     assert(header.isValid());
     assert(header.size[0] + header.size[1] > 0);
@@ -354,7 +405,7 @@ bool OpBookBuilder::createSave(const std::string& path_, const std::map<std::str
         if (ok) {
             std::cout << "Book has been created, #items: " << header.size[0] << ", " << header.size[1] << ", starting: " << startSize[0] << ", " << startSize[1] << std::endl;
         } else {
-            std::cerr << "Error: Cannot write book data." << std::endl;
+            std::cerr << "Error: Cannot write data" << std::endl;
         }
     }
 

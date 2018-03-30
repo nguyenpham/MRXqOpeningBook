@@ -1,26 +1,10 @@
-/*
- This file is part of MoonRiver Xiangqi Opening Book, distributed under MIT license.
-
- Copyright (c) 2018 Nguyen Hong Pham
-
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
- */
+//
+//  main.cpp
+//  Opening
+//
+//  Created by Tony Pham on 3/3/18.
+//  Copyright © 2018 Softgaroo. All rights reserved.
+//
 
 #include <iostream>
 #include <map>
@@ -30,36 +14,31 @@
 
 static void show_usage(std::string name)
 {
-    std::cerr << "Usage: " << name << " [-h] [create] [-f inputpath] [-d directory] [-o outputpath] [-i info-copyright] [-max-fly fly] [-min-game number] [-only-white] [-only-black] [-uniform]" << std::endl;
+    std::cerr << "Usage: " << name << " [-h] [-f inputpath] [-d directory] [-o outputpath] [-i info-copyright] [-max-fly fly] [-min-game number] [-only-white] [-only-black] [-uniform]" << std::endl;
     std::cerr << "Options:\n"
-    << "\t-h,--help\tshow this help message and exit\n"
-    << "\tcreate\t\tcreate opening book\n"
-    << "\tverify\t\tverify opening book\n"
-    << "\t-f\t\t\tinput path\n"
-    << "\t-d\t\t\tinput directory\n"
-    << "\t-o\t\t\toutput path (default openingbook.xob)\n"
-    << "\t-i\t\t\tinfo/copyright string\n"
-    << "\t-min-fly\tmininum game length in plies (half moves) to add for each game (default: 20)\n"
-    << "\t-max-fly\tplies (half moves) to add for each game (default: infinite)\n"
-    << "\t-min-game\tnumber of moves to be played to be kept in the book (default: 3)\n"
+    << "\t-h,--help\t\tshow this help message and exit\n"
+    << "\t-f\t\tinput path\n"
+    << "\t-d\t\tinput directory\n"
+    << "\t-o\t\toutput path\n"
+    << "\t-i\t\tinfo/copyright string\n"
+    << "\t-max-fly\t\tplies (half moves) to add for each game (default: infinite)\n"
+    << "\t-min-game\t\tnumber of moves to be played to be kept in the book (default: 3)\n"
     << std::endl
-    << "\tExample: " << name << " create -d c:\\games -i \"created by John 2018\"\n"
+    << "\tExample: opening -d c:\\games -o c:\\opening.xob \n"
 
     << std::endl;
 }
 
-const char* appname = "MRXqOpeningBook";
-
 int main(int argc, const char * argv[]) {
     if (argc < 3) {
-        show_usage(appname);
-        return 1;
+        show_usage(argv[0]);
+//        return 1;
     }
 
     std::map<std::string, std::string> paramMap;
 
     const char* singleParaNames[] = {
-        "-only-white", "-only-black", "create", "verify", "merge", "-uniform",
+        "-only-white", "-only-black", "merge-book", "-uniform",
         nullptr
     };
 
@@ -95,8 +74,9 @@ int main(int argc, const char * argv[]) {
 
         for(int j = 0; pairParaNames[j]; j += 2) {
             if (arg == pairParaNames[j]) {
-                if (i + 1 < argc) {
-                    paramMap[pairParaNames[j + 1]] = argv[++i];
+                if (i + 1 < argc) { // Make sure we aren't at the end of argv!
+                    auto destination = argv[i++]; // Increment 'i' so we don't get the argument as the next argv[i].
+                    paramMap[pairParaNames[j + 1]] = destination;
                 } else {
                     std::cerr << pairParaNames[j] << " option requires one argument." << std::endl;
                     return 1;
@@ -106,53 +86,36 @@ int main(int argc, const char * argv[]) {
         }
     }
 
-    std::cout << "Welcome to " << appname << " - version: " << opening::getVersion() << std::endl;
+    std::cout << "Welcome to Opening - version: " << opening::getVersion() << std::endl;
 
     ///////////////////////////////////////////
-    auto it = paramMap.find("create");
-    if (it != paramMap.end()) {
-        opening::OpBookBuilder opBookBuilder;
-        opBookBuilder.create(paramMap);
-        return 0;
-    }
-
-    it = paramMap.find("verify");
-    if (it != paramMap.end()) {
-        it = paramMap.find("file");
-        if (it != paramMap.end()) {
-            opening::OpBook opBook;
-            opBook.load(it->second);
-            opBook.verifyData();
-        }
-        return 0;
-    }
-
-////    opening::OpeningBoard board;
-////    board.setFen("");
-////    std::cout << "Origin hashKey = " << board.key() << std::endl;
-//
-//
-////    paramMap["file"] = "/Users/TonyPham/workspace/Opening/testgame/workinggame.pgn";
-////    paramMap["file"] = "/Users/TonyPham/workspace/Opening/testgame/MyTestRule.pgn";
-////    paramMap["file"] = "/Users/TonyPham/workspace/Opening/testgame/chasegames.pgn";
-////    paramMap["file"] = "/Users/TonyPham/workspace/Opening/testgame/AsiaRule.pgn";
-//
-////    paramMap["file"] = "/Users/TonyPham/workspace/Opening/testgame/chasing04.pgn";
-//    paramMap["folder"] = "/Users/TonyPham/workspace/Opening/testgame";
-//
-//    paramMap["out"] = "/Users/TonyPham/workspace/Opening/o.xob";
-//    paramMap["-only-white"] = "1";
-//    opBookBuilder.create(paramMap);
-//
-//    opening::OpBook opBook;
-//    opBook.load("/Users/TonyPham/workspace/Opening/o.xob");
-//    opBook.verifyData();
-//
 //    opening::OpeningBoard board;
 //    board.setFen("");
-//
-//    auto move = opBook.probe(board);
-//    std::cout << "opening move = " << move.toString() << std::endl;
+//    std::cout << "Origin hashKey = " << board.key() << std::endl;
+
+    opening::OpBookBuilder opBookBuilder;
+
+//    paramMap["file"] = "/Users/TonyPham/workspace/Opening/testgame/workinggame.pgn";
+//    paramMap["file"] = "/Users/TonyPham/workspace/Opening/testgame/MyTestRule.pgn";
+//    paramMap["file"] = "/Users/TonyPham/workspace/Opening/testgame/chasegames.pgn";
+//    paramMap["file"] = "/Users/TonyPham/workspace/Opening/testgame/AsiaRule.pgn";
+
+//    paramMap["file"] = "/Users/TonyPham/workspace/Opening/testgame/chasing04.pgn";
+    paramMap["folder"] = "/Users/TonyPham/workspace/Opening/testgame";
+
+    paramMap["out"] = "/Users/TonyPham/workspace/Opening/o.xob";
+    paramMap["-only-white"] = "1";
+    opBookBuilder.create(paramMap);
+
+    opening::OpBook opBook;
+    opBook.load("/Users/TonyPham/workspace/Opening/o.xob");
+    opBook.verifyData();
+
+    opening::OpeningBoard board;
+    board.setFen("");
+
+    auto move = opBook.probe(board);
+    std::cout << "opening move = " << move.toString() << std::endl;
 
     return 0;
 }

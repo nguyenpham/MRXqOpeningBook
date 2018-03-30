@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>Builder.qml</file>
+        <file>OpeningView.qml</file>
+        <file>Board.qml</file>
+        <file>BoardView.qml</file>
+        <file>Piece.qml</file>
+        <file>XqBoardGrid.qml</file>
+        <file>PathInput.qml</file>
+        <file>fonts/xiangqi.ttf</file>
+    </qresource>
+</RCC>

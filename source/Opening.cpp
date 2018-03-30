@@ -1,5 +1,6 @@
+
 /*
- This file is part of MoonRiver Xiangqi Opening Book, distributed under MIT license.
+ This file is part of Felicity Egtb, distributed under MIT license.
 
  Copyright (c) 2018 Nguyen Hong Pham
 
@@ -51,7 +52,7 @@
  */
 
 namespace opening {
-    bool openingVerbose = false;
+    bool openingVerbose = true;
 
     std::vector<std::string> splitString(const std::string& string, const std::string& regexString) {
         std::regex re(regexString);
@@ -209,5 +210,48 @@ namespace opening {
 
 #endif
 
+//    static void * _allocForLzma(ISzAllocPtr, size_t size) { return malloc(size); }
+//    static void _freeForLzma(ISzAllocPtr, void *addr) { free(addr); }
+//    static ISzAlloc _szAllocForLzma = { _allocForLzma, _freeForLzma };
+//
+//    static const Byte lzmaPropData[5] = { 93, 0, 0, 0, 1 };
+//
+//    int decompress(char *dst, int uncompresslen, const char *src, int slen) {
+//        SizeT srcLen = slen, dstLen = uncompresslen;
+//        ELzmaStatus lzmaStatus;
+//
+//        SRes res = LzmaDecode(
+//                              (Byte *)dst, &dstLen,
+//                              (const Byte *)src, &srcLen,
+//                              lzmaPropData, LZMA_PROPS_SIZE,
+//                              LZMA_FINISH_ANY,
+//                              &lzmaStatus, &_szAllocForLzma
+//                              );
+//        return res == SZ_OK ? (int)dstLen : -1;
+//    }
+//
+//    i64 decompressAllBlocks(int blocksize, int blocknum, u32* blocktable, char *dest, i64 uncompressedlen, const char *src, i64 slen) {
+//        auto *s = src;
+//        auto p = dest;
+//
+//        for(int i = 0; i < blocknum; i++) {
+//            int blocksz = (blocktable[i] & ~EGTB_UNCOMPRESS_BIT) - (i == 0 ? 0 : (blocktable[i - 1] & ~EGTB_UNCOMPRESS_BIT));
+//            int uncompressed = blocktable[i] & EGTB_UNCOMPRESS_BIT;
+//
+//            if (uncompressed) {
+//                memcpy(p, s, blocksz);
+//                p += blocksz;
+//            } else {
+//                auto left = uncompressedlen - (i64)(p - dest);
+//                auto curBlockSize = (int)MIN(left, (i64)blocksize);
+//
+//                auto originSz = decompress((char*)p, curBlockSize, s, blocksz);
+//                p += originSz;
+//            }
+//            s += blocksz;
+//        }
+//
+//        return (i64)(p - dest);
+//    }
 }
 

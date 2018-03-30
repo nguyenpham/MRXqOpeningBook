@@ -1,5 +1,5 @@
 /*
- This file is part of MoonRiver Xiangqi Opening Book, distributed under MIT license.
+ This file is part of Felicity Egtb, distributed under MIT license.
 
  Copyright (c) 2018 Nguyen Hong Pham
 
@@ -34,7 +34,7 @@
 
 namespace opening {
 
-#define OPENING_VERSION                    0x01
+#define OPENING_VERSION                    0x100
 
 
     ////////////////////////////////////////

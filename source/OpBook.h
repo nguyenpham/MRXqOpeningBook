@@ -1,26 +1,10 @@
-/*
- This file is part of MoonRiver Xiangqi Opening Book, distributed under MIT license.
-
- Copyright (c) 2018 Nguyen Hong Pham
-
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
- */
+//
+//  OpBook.hpp
+//  Opening
+//
+//  Created by Tony Pham on 4/3/18.
+//  Copyright © 2018 Softgaroo. All rights reserved.
+//
 
 #ifndef OpBook_hpp
 #define OpBook_hpp
@@ -116,10 +100,12 @@ namespace opening {
         bool save(std::string path = "");
         bool verifyData() const;
 
+        i64 find(u64 key, int sd) const;
+        u16 getValue(u64 idx, int sd) const;
+
     protected:
         Move _probe(OpeningBoard& board, MoveList* opMoveList = nullptr) const;
 
-        i64 find(u64 key, int sd) const;
         static i64 find(u64 key, const char* data, i64 itemCount, int itemSize);
         
         bool verifyData(int sd) const;

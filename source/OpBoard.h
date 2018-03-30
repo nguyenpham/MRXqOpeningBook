@@ -1,6 +1,6 @@
 
 /*
- This file is part of MoonRiver Xiangqi Opening Book, distributed under MIT license.
+ This file is part of Felicity Egtb, distributed under MIT license.
 
  Copyright (c) 2018 Nguyen Hong Pham
 
@@ -89,6 +89,31 @@ namespace opening {
 
     };
 
+    class MoveCore {
+    public:
+        int8_t from, dest;
+
+        MoveCore() {
+            from = dest = -1;
+        }
+        MoveCore(int _from, int _dest) {
+            from = _from; dest = _dest;
+        }
+    };
+
+//    class MoveCoreVector {
+//    public:
+//        std::vector<MoveCore> list;
+
+//        void add(const MoveCore& move) {
+//            list.push_back(move);
+//        }
+//        void add(int from, int dest) {
+//            MoveCore move(from, dest);
+//            add(move);
+//        }
+//    };
+
     class Move {
     public:
         int8_t  from, dest;
@@ -142,6 +167,10 @@ namespace opening {
         bool isValid() const {
             return move.isValid() && cap.isValid();
         }
+
+        static std::string moveString_san(const Move& move);
+        static std::string moveString_coordinate(const Move& move);
+        static std::string moveString_coordinate(int from, int dest);
     };
 
     class MoveList {
@@ -211,10 +240,11 @@ namespace opening {
         }
 
         void genLegal(MoveList& moves, Side side);
-        void gen(MoveList& moveList, Side side, bool capOnly) const;
+        void gen(MoveList& moveList, Side side, bool capOnly = false) const;
 
         bool isIncheck(Side beingAttackedSide) const;
 
+        void make(int from, int dest);
         void make(const Move& move, Hist& hist);
         void takeBack(const Hist& hist);
 
@@ -223,6 +253,7 @@ namespace opening {
 
         void setResult(const std::string& fen);
 
+        void newGame(std::string fen = "");
         void setFen(const std::string& fen);
         bool setup(const std::vector<Piece> pieceVec, Side side);
 
@@ -258,7 +289,12 @@ namespace opening {
         std::vector<Hist>& getHistList() {
             return histList;
         }
+        const std::vector<Hist>& getHistList() const {
+            return histList;
+        }
         void initHashKey();
+
+        static std::string squareString(int pos);
 
     private:
         std::string toString() const;

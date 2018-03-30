@@ -1,5 +1,6 @@
+
 /*
- This file is part of MoonRiver Xiangqi Opening Book, distributed under MIT license.
+ This file is part of Felicity Egtb, distributed under MIT license.
 
  Copyright (c) 2018 Nguyen Hong Pham
 
@@ -49,6 +50,40 @@ namespace opening {
 }
 
 using namespace opening;
+
+
+std::string Hist::moveString_san(const Move& move)
+{
+    std::string str;
+
+    if (move.type != PieceType::pawn) {
+        char ch = pieceTypeName[static_cast<int>(move.type)];
+        if (move.side == Side::white) {
+            ch -= 'a' - 'A';
+        }
+        str += ch;
+    }
+
+    str += OpeningBoard::squareString(move.from);
+    if (move.capType != PieceType::empty) str += 'x';
+    str += OpeningBoard::squareString(move.dest);
+
+    return str;
+}
+
+std::string Hist::moveString_coordinate(const Move& move)
+{
+    return Hist::moveString_coordinate(move.from, move.dest);
+}
+
+std::string Hist::moveString_coordinate(int from, int dest)
+{
+    auto str = OpeningBoard::squareString(from);
+    str += OpeningBoard::squareString(dest);
+    return str;
+}
+
+
 
 extern const u64 hashTable[];
 static const std::string originalFen = "rneakaenr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNEAKAENR w - - 0 1";
@@ -108,6 +143,13 @@ void OpeningBoard::setResult(const std::string& resultString) {
     else if (resultString == "0-1") result = Result::loss;
     else if (resultString == "1/2-1/2" || resultString == "0.5-0.5") result = Result::draw;
     else result = Result::noresult;
+}
+
+void OpeningBoard::newGame(std::string fen)
+{
+    setFen(fen);
+    histList.clear();
+    result = Result::noresult;
 }
 
 void OpeningBoard::setFen(const std::string& fen) {
@@ -517,6 +559,22 @@ void OpeningBoard::initHashKey() {
             xorHashKey(i);
         }
     }
+}
+
+void OpeningBoard::make(int from, int dest)
+{
+    Move move(from, dest);
+    assert(move.isValid());
+    auto piece = pieces[from];
+    auto cap = pieces[dest];
+    move.type = piece.type;
+    move.side = piece.side;
+    move.capType = cap.type;
+    move.score = 0;
+
+    assert(!piece.isEmpty());
+
+    make(move);
 }
 
 void OpeningBoard::make(const Move& move, Hist& hist) {
@@ -1011,6 +1069,21 @@ bool OpeningBoard::isIncheck(Side beingAttackedSide) const
 
     return false;
 }
+
+std::string OpeningBoard::squareString(int pos)
+{
+    if (pos < 0 || pos >= 90)
+        return "";
+
+    int f = pos % 9, r = pos / 9;
+
+    std::string str;
+
+    str += 'a' + f;
+    str += std::to_string(9 - r);
+    return str;
+}
+
 
 namespace opening {
 
