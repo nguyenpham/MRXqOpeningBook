@@ -23,6 +23,7 @@
  SOFTWARE.
  */
 
+
 #include "OpBoard.h"
 #include <assert.h>
 
@@ -47,46 +48,12 @@ namespace opening {
         PieceType::pawn, PieceType::pawn, PieceType::pawn, PieceType::pawn, PieceType::pawn
     };
 
+    const std::string originalFen = "rneakaenr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNEAKAENR w - - 0 1";
 }
 
 using namespace opening;
 
-
-std::string Hist::moveString_san(const Move& move)
-{
-    std::string str;
-
-    if (move.type != PieceType::pawn) {
-        char ch = pieceTypeName[static_cast<int>(move.type)];
-        if (move.side == Side::white) {
-            ch -= 'a' - 'A';
-        }
-        str += ch;
-    }
-
-    str += OpeningBoard::squareString(move.from);
-    if (move.capType != PieceType::empty) str += 'x';
-    str += OpeningBoard::squareString(move.dest);
-
-    return str;
-}
-
-std::string Hist::moveString_coordinate(const Move& move)
-{
-    return Hist::moveString_coordinate(move.from, move.dest);
-}
-
-std::string Hist::moveString_coordinate(int from, int dest)
-{
-    auto str = OpeningBoard::squareString(from);
-    str += OpeningBoard::squareString(dest);
-    return str;
-}
-
-
-
 extern const u64 hashTable[];
-static const std::string originalFen = "rneakaenr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNEAKAENR w - - 0 1";
 
 void OpeningBoard::show(const char* msg) const {
     if (msg) {
@@ -128,10 +95,10 @@ bool OpeningBoard::setup(const std::vector<Piece> pieceVec, Side _side) {
 
     side = _side;
     for (auto && p : pieceVec) {
-        if (!isEmpty(p.pos)) {
+        if (!isEmpty(p.idx)) {
             return false;
         }
-        set(p.pos, p.type, p.side);
+        set(p.idx, p.type, p.side);
     }
 
     initHashKey();
@@ -139,27 +106,38 @@ bool OpeningBoard::setup(const std::vector<Piece> pieceVec, Side _side) {
 }
 
 void OpeningBoard::setResult(const std::string& resultString) {
-    if (resultString == "1-0") result = Result::win;
-    else if (resultString == "0-1") result = Result::loss;
-    else if (resultString == "1/2-1/2" || resultString == "0.5-0.5") result = Result::draw;
-    else result = Result::noresult;
+    result.reset();
+    if (resultString == "1-0") result.result = ResultType::win;
+    else if (resultString == "0-1") result.result = ResultType::loss;
+    else if (resultString == "1/2-1/2" || resultString == "0.5-0.5") result.result = ResultType::draw;
+    else result.result = ResultType::noresult;
 }
 
-void OpeningBoard::newGame(std::string fen)
-{
-    setFen(fen);
+void OpeningBoard::newGame(const std::string& fen) {
     histList.clear();
-    result = Result::noresult;
+    result.reset();
+
+    setFen(fen);
 }
 
-void OpeningBoard::setFen(const std::string& fen) {
+
+void OpeningBoard::cloneFrom(const OpeningBoard& board) {
+    newGame(board.startingFenString());
+    for(auto hist : board.histList) {
+        make(hist.move);
+    }
+    result = board.result;
+}
+
+void OpeningBoard::setFen(const std::string& fen_) {
     pieceList_reset((int8_t *)pieceList);
     for (auto && p : pieces) {
         p.setEmpty();
     }
 
-    std::string thefen = fen;
-    if (fen.empty()) {
+    startingFen = fen_;
+    std::string thefen = fen_;
+    if (fen_.empty()) {
         thefen = originalFen;
     }
 
@@ -220,6 +198,23 @@ void OpeningBoard::setFen(const std::string& fen) {
     }
 
     initHashKey();
+
+    int idx[] = { 0, 0 };
+    for(int i = 0; i < 16; i++) {
+        for(int sd = 0; sd < 2; sd++) {
+            if (pieceList[sd][i] >= 0) {
+                pieces[pieceList[sd][i]].idx = idx[sd]++;
+            }
+        }
+    }
+}
+
+std::string OpeningBoard::getPgn() const {
+    return "working";
+}
+
+std::string OpeningBoard::getFen() const {
+    return getFen(side, histList.size(), histList.size() / 2 + 1);
 }
 
 std::string OpeningBoard::getFen(Side side, int halfCount, int fullMoveCount) const {
@@ -561,26 +556,10 @@ void OpeningBoard::initHashKey() {
     }
 }
 
-void OpeningBoard::make(int from, int dest)
-{
-    Move move(from, dest);
-    assert(move.isValid());
-    auto piece = pieces[from];
-    auto cap = pieces[dest];
-    move.type = piece.type;
-    move.side = piece.side;
-    move.capType = cap.type;
-    move.score = 0;
-
-    assert(!piece.isEmpty());
-
-    make(move);
-}
-
 void OpeningBoard::make(const Move& move, Hist& hist) {
     auto hk = hashKey; initHashKey();
     assert(hk == hashKey);
-
+    assert(!pieces[move.from].isEmpty());
 
     hist.move = move;
     hist.cap = pieces[move.dest];
@@ -610,13 +589,37 @@ void OpeningBoard::takeBack(const Hist& hist) {
     pieceList_takeback(hist);
 }
 
-void OpeningBoard::make(const Move& move)
+void OpeningBoard::make(int from, int dest, bool createMoveStrings)
+{
+    Move move(from, dest);
+    auto piece = pieces[from];
+    auto cap = pieces[dest];
+    move.type = piece.type;
+    move.side = piece.side;
+    move.capType = cap.type;
+    move.score = 0;
+
+    make(move, createMoveStrings);
+}
+
+void OpeningBoard::make(const Move& move, bool createMoveStrings)
 {
     Hist hist;
+
+    std::string moveString = "";
+
+    if (createMoveStrings) {
+        collectExtraMoveInfo(move, hist);
+    }
+
     make(move, hist);
 
-    side = getXSide(side);
+    if (createMoveStrings) {
+        collectExtraMoveInfo_checkOrMate(hist);
+    }
+
     histList.push_back(hist);
+    side = getXSide(side);
 }
 
 void OpeningBoard::takeBack()
@@ -627,6 +630,34 @@ void OpeningBoard::takeBack()
     histList.pop_back();
 }
 
+TheResult OpeningBoard::makeRule()
+{
+    auto curSide = side;
+    MoveList moveList;
+    gen(moveList, curSide);
+
+    bool hasLegalMoves = false;
+    for(int i = 0; i < moveList.end; i++) {
+        auto move = moveList.list[i];
+        Hist hist;
+        make(move, hist);
+        auto incheck = isIncheck(curSide);
+        takeBack(hist);
+
+        if (!incheck) {
+            hasLegalMoves = true;
+            break;
+        }
+    }
+
+    if (hasLegalMoves) {
+    } else {
+        result.result = curSide == Side::white ? ResultType::loss : ResultType::win;
+        result.reason = isIncheck(curSide)? ReasonType::mate : ReasonType::stalemate;
+    }
+    return result;
+}
+
 int OpeningBoard::findKing(Side side) const
 {
     auto sd = static_cast<int>(side);
@@ -634,14 +665,25 @@ int OpeningBoard::findKing(Side side) const
     return kingpos;
 }
 
-void OpeningBoard::genLegal(MoveList& moves, Side side) {
+bool OpeningBoard::isLegalMove(int from, int dest)
+{
+    MoveList moveList;
+    genLegal(moveList, side, from, dest);
+    return moveList.end > 0;
+}
+
+void OpeningBoard::genLegal(MoveList& moves, Side side, int from, int dest) {
 
     MoveList moveList;
-    gen(moveList, side, false);
+    gen(moveList, side);
 
     Hist hist;
     for (int i = 0; i < moveList.end; i++) {
         auto move = moveList.list[i];
+        if ((from >= 0 && move.from != from) || (dest >= 0 && move.dest != dest)) {
+            continue;
+        }
+
         make(move, hist);
         if (!isIncheck(side)) {
             moves.add(move);
@@ -658,10 +700,19 @@ void OpeningBoard::gen_addMove(MoveList& moves, int from, int dest, bool capture
     }
 }
 
-void OpeningBoard::gen(MoveList& moves, Side side, bool captureOnly) const {
+void OpeningBoard::gen(MoveList& moves, Side side, PieceType type, bool captureOnly) const {
     moves.reset();
-    for (int l = 0; l < 16; l++) {
-        auto pos = pieceList[static_cast<int>(side)][l];
+
+    int sd = static_cast<int>(side);
+    int fromIdx = 0, toIdx = 16;
+
+    if (type != PieceType::empty) {
+        fromIdx = egtbPieceListStartIdxByType[static_cast<int>(type)];
+        toIdx = fromIdx + (type != PieceType::pawn ? 2 : 5);
+    }
+
+    for (int l = fromIdx; l < toIdx; l++) {
+        auto pos = pieceList[sd][l];
         if (pos < 0) {
             continue;
         }
@@ -1070,6 +1121,475 @@ bool OpeningBoard::isIncheck(Side beingAttackedSide) const
     return false;
 }
 
+Move OpeningBoard::moveFromSanString(std::string str)
+{
+    Move nomove(-1, -1);
+    if (str.length() < 2)
+        return nomove;
+
+//    auto mstr = str;
+////    Side side = sideToMove();
+
+//    // Ignore check/mate/strong move/blunder notation
+//    while (mstr.endsWith('+') || mstr.endsWith('#')
+//    ||     mstr.endsWith('!') || mstr.endsWith('?'))
+//    {
+//        mstr.chop(1);
+//    }
+
+//    if (mstr.length() < 2)
+//        return nomove;
+
+//    int from, dest;
+//    QString::const_iterator it = mstr.cbegin();
+
+//    // A SAN move can't start with the capture mark, and
+//    if (*it == 'x')
+//        return nomove;
+//    // a pawn move should not specify the piece type
+//    if (pieceFromSymbol(*it) == Pawn)
+//        it++; // ignore character
+//    // Piece type
+//    Piece piece = pieceFromSymbol(*it);
+//    if (piece.side() != Side::white)
+//        piece.type = PieceType::empty;
+//    else
+//        piece.setSide(side);
+
+//    if (piece.isEmpty())
+//    {
+//        piece = Piece(side, Pawn);
+//        targetSq = chessSquare(mstr.mid(0, 2));
+//        if (isValidSquare(targetSq))
+//            it += 2;
+//    }
+//    else {
+//        ++it;
+//    }
+
+//    bool stringIsCapture = false;
+
+//    if (!isValidSquare(targetSq)) {
+//        // Source square's file
+//        sourceSq.setFile(it->toLatin1() - 'a');
+//        if (sourceSq.file() < 0 || sourceSq.file() >= width())
+//            sourceSq.setFile(-1);
+//        else if (++it == mstr.cend())
+//            return Move();
+
+//        // Source square's rank
+//        if (it->isDigit())
+//        {
+//            sourceSq.setRank(it->toLatin1() - '0');
+//            if (sourceSq.rank() < 0 || sourceSq.rank() >= height())
+//                return Move();
+//            ++it;
+//        }
+//        if (it == mstr.cend())
+//        {
+//            // What we thought was the source square, was
+//            // actually the target square.
+//            if (isValidSquare(sourceSq))
+//            {
+//                targetSq = sourceSq;
+//                sourceSq.setRank(-1);
+//                sourceSq.setFile(-1);
+//            }
+//            else
+//                return move;
+//        }
+//        // Capture
+//        else if (*it == 'x')
+//        {
+//            if(++it == mstr.cend())
+//                return Move();
+//            stringIsCapture = true;
+//        }
+
+//        // Target square
+//        if (!isValidSquare(targetSq))
+//        {
+//            if (it + 1 == mstr.cend())
+//                return move;
+//            targetSq = chessSquare(mstr.mid(it - mstr.cbegin(), 2));
+//            it += 2;
+//        }
+//    }
+//    if (!isValidSquare(targetSq))
+//        return nomove;
+//    int target = squareIndex(targetSq);
+
+//    // Make sure that the move string is right about whether
+//    // or not the move is a capture.
+//    bool isCapture = false;
+//    if (pieceAt(target).side() == side.opposite())
+//        isCapture = true;
+//    if (isCapture != stringIsCapture)
+//        return move;
+
+//    QVarLengthArray<Move> moves;
+//    generateMoves(moves, piece.type());
+//    const Move* match = nullptr;
+
+//    // Loop through all legal moves to find a move that matches
+//    // the data we got from the move string.
+//    for (int i = 0; i < moves.size(); i++) {
+//        const Move& move = moves[i];
+//        if (move.sourceSquare() == 0 || move.targetSquare() != target)
+//            continue;
+//        Square sourceSq2 = Board::chessSquare(move.sourceSquare());
+//        if (sourceSq.rank() != -1 && sourceSq2.rank() != sourceSq.rank())
+//            continue;
+//        if (sourceSq.file() != -1 && sourceSq2.file() != sourceSq.file())
+//            continue;
+//        // Castling moves were handled earlier
+//        if (pieceAt(target) == Piece(side, Rook))
+//            continue;
+
+//        if (!vIsLegalMove(move))
+//            continue;
+
+//        // Return an empty move if there are multiple moves that
+//        // match the move string.
+//        if (match != nullptr)
+//            return nomove;
+//        match = &move;
+//    }
+
+//    if (match != nullptr)
+//        return *match;
+
+    return nomove;
+}
+
+Move OpeningBoard::moveFromLanString(std::string str)
+{
+    Move nomove(-1, -1);
+////	QString str(istr);
+//    str.remove(QRegExp("[x+#!?]"));
+//    int len = str.length();
+//    if (len < 4)
+//        return nomove;
+
+////    Piece promotion;
+////    int drop = str.indexOf('@');
+////    if (drop > 0)
+////    {
+////        promotion = pieceFromSymbol(str.left(drop));
+////        if (!promotion.isValid())
+////            return Move();
+
+////        Square trg(chessSquare(str.mid(drop + 1)));
+////        if (!isValidSquare(trg))
+////            return Move();
+
+////        return Move(0, squareIndex(trg));
+////    }
+
+//    Square sourceSq(chessSquare(str.mid(0, 2)));
+//    Square targetSq(chessSquare(str.mid(2, 2)));
+
+//    if (!isValidSquare(sourceSq) || !isValidSquare(targetSq))
+//        return nomove;
+
+////    if (len > 4)
+////    {
+////        promotion = pieceFromSymbol(str.mid(len-1));
+////        if (!promotion.isValid())
+////            return Move();
+////    }
+
+//    int source = squareIndex(sourceSq);
+//    int target = squareIndex(targetSq);
+
+//    return Move(source, target);
+
+    return nomove;
+
+}
+
+//std::string OpeningBoard::getResultString() const
+//{
+//    static const char* resultStringNames[] = {
+//        "*", "1-0", "1/2-1/2", "0-1"
+//    };
+//    return resultStringNames[static_cast<int>(result)];
+//}
+
+int algebraicCoordinateToPos(const char* str)
+{
+    if (str) {
+        auto colChr = str[0], rowChr = str[1];
+        if (colChr >= 'a' && colChr <= 'i' && rowChr >= '0' && rowChr <= '9') {
+            int col = colChr - 'a';
+            int row = rowChr - '0';
+
+            return (9 - row) * 9 + col;
+        }
+    }
+    return -1;
+}
+
+Move OpeningBoard::moveFromString(const std::string& s)
+{
+    auto move = moveFromString_san(s);
+
+    if (!move.isValid() || !isLegalMove(move)) {
+        move = moveFromString_algebraicCoordinates(s);
+    }
+
+    return move;
+}
+
+Move OpeningBoard::moveFromString_algebraicCoordinates(const std::string& s)
+{
+    const char* str = s.c_str();
+    int from = algebraicCoordinateToPos(str);
+    int dest = algebraicCoordinateToPos(str + 2);
+    return Move(from, dest);
+}
+
+Move OpeningBoard::moveFromString_san(const std::string& s)
+{
+    Move noMove(-1, -1);
+    int i = 0;
+    char ch = s.at(i);
+
+    PieceType pieceType = PieceType::pawn;
+    if (ch>='A' && ch <='Z') {
+        i++;
+        ch += 'a' - 'A';
+        const char* p = strchr(pieceTypeName, ch);
+        if (p != NULL) {
+            int k = (int)(p - pieceTypeName);
+            pieceType = static_cast<PieceType>(k);
+        } else {
+            assert(false);
+            return noMove;
+        }
+    }
+
+    int fromCol = -1;
+    int fromRow = -1;
+    int left = (int)s.length() - i;
+    if (left > 2) {
+        char ch = s.at(i);
+        if (isalpha(ch)) {
+            fromCol = ch - 'a';
+        } else if (isdigit(ch)) {
+            int r = ch - '0';
+            fromRow = 9 - r;
+        }
+        i++;
+    }
+
+    char colChr = s.at(i);
+    char rowChr0 = s.at(i+1);
+
+    if (isalpha(colChr) && isdigit(rowChr0)) {
+        int col = colChr - 'a';
+        int row = rowChr0 - '0';
+
+        int dest = (9 - row) * 9 + col;
+
+        auto move = findLegalMove(pieceType, fromCol, fromRow, dest);
+        if (move.isValid()) {
+            return move;
+        }
+
+    }
+
+//    board.show("Failed parsing move");
+    return noMove;
+}
+
+Move OpeningBoard::findLegalMove(PieceType pieceType, int fromCol, int fromRow, int dest) {
+    MoveList moveList;
+    gen(moveList, side);
+
+    for (int i = 0; i < moveList.end; i++) {
+        auto move = moveList.list[i];
+        auto movePiece = getPiece(move.from);
+        if (movePiece.type == pieceType) {
+            if (((fromCol < 0 || (fromCol >= 0 && fromCol == move.from %  9))
+                 && (fromRow < 0 || (fromRow >= 0 && fromRow == move.from / 9))
+                 && (dest < 0 || (dest >= 0 && dest == move.dest)))) {
+                Hist hist;
+                make(move, hist);
+                auto ok = !isIncheck(side);
+                takeBack(hist);
+                if (ok) {
+                    return move;
+                }
+                break;
+            }
+        }
+    }
+
+    return Move(0, 0);
+}
+
+void OpeningBoard::collectExtraMoveInfo_checkOrMate(Hist& hist)
+{
+    if (!isIncheck(side)) {
+        return;
+    }
+
+    MoveList moveList;
+    genLegal(moveList, side);
+    hist.checkOrMate = moveList.end > 0 ? '+' : '#';
+}
+
+// before making the move
+void OpeningBoard::collectExtraMoveInfo(const Move& makingmove, Hist& hist)
+{
+    if (makingmove.type != PieceType::king) {
+        MoveList moveList;
+        gen(moveList, side, makingmove.type);
+
+        if (moveList.end > 1) {
+            for (int i = 0; i < moveList.end; i++) {
+                auto move2 = moveList.list[i];
+                assert(move2.type == makingmove.type);
+                if (move2.from == makingmove.from || move2.dest != makingmove.dest)
+                    continue;
+
+                Hist tmpHist;
+                make(move2, tmpHist);
+                bool legal = !isIncheck(side);
+                takeBack(tmpHist);
+
+                if (!legal) {
+                    continue;
+                }
+
+                hist.ambiguousVec.push_back(move2.from);
+            }
+        }
+    }
+}
+
+
+std::string Hist::moveString(Notation notation)
+{
+    if (notation == Notation::algebraic_coordinate) {
+        return moveString_algebraic();
+    }
+    return moveString_traditional(notation);
+}
+
+std::string Hist::moveString_san(const Move& move)
+{
+    std::string str;
+
+    if (move.type != PieceType::pawn) {
+        char ch = pieceTypeName[static_cast<int>(move.type)];
+        if (move.side == Side::white) {
+            ch -= 'a' - 'A';
+        }
+        str += ch;
+    }
+
+    str += OpeningBoard::squareString(move.from);
+    if (move.capType != PieceType::empty) str += 'x';
+    str += OpeningBoard::squareString(move.dest);
+
+    return str;
+}
+
+std::string Hist::moveString_coordinate(const Move& move)
+{
+    return Hist::moveString_coordinate(move.from, move.dest);
+}
+
+std::string Hist::moveString_coordinate(int from, int dest)
+{
+    auto str = OpeningBoard::squareString(from);
+    str += OpeningBoard::squareString(dest);
+    return str;
+}
+
+std::string Hist::moveString_algebraic()
+{
+    std::string str;
+
+    if (move.type != PieceType::pawn) {
+        char ch = pieceTypeName[static_cast<int>(move.type)];
+        if (move.side == Side::white) {
+            ch -= 'a' - 'A';
+        }
+        str += ch;
+    }
+
+    if (!ambiguousVec.empty()) {
+        bool needRank = false, needFile = false;
+        int f = move.from % 9, r = move.from / 9;
+        for(auto && from : ambiguousVec) {
+            if (from % 9 != f) needFile = true;
+            else if (from / 9 != r) needRank = true;
+        }
+
+        if (needFile)
+            str += 'a' + f;
+        if (needRank)
+            str += '0' + (9 - r);
+    }
+
+    if (move.capType != PieceType::empty) str += 'x';
+    str += OpeningBoard::squareString(move.dest);
+
+    if (checkOrMate) {
+        str += checkOrMate;
+    }
+    return str;
+}
+
+
+const char* notationPieceNames[4][7] =
+{
+    { "K", "A", "E", "R", "C", "H", "P" },
+    { "K", "A", "E", "R", "C", "H", "P" },
+    { "Tg", "S", "T", "X", "P", "M", "C" },
+    { "Tg", "S", "T", "X", "P", "M", "C" }
+};
+
+static const char* advanceNames[4][3] = {
+    { "+", "-", "." },
+    { "+", "-", "." },
+    { ".", "/", "-" },
+    { ".", "/", "-" }
+};
+
+std::string Hist::moveString_traditional(Notation notation)
+{
+    int notationIdx = static_cast<int>(notation);
+    std::string str = notationPieceNames[notationIdx][static_cast<int>(move.type)];
+
+    int f = move.from % 9;
+    int ff = move.side == Side::black ? f : (8 - f);
+    str += '1' + ff;
+
+    if (move.type == PieceType::advisor || move.type == PieceType::elephant || move.type == PieceType::horse) {
+        str += (move.side == Side::white && move.dest < move.from) || (move.side == Side::black && move.dest > move.from) ?
+                    advanceNames[notationIdx][0] : advanceNames[notationIdx][1];
+        int c = move.dest % 9;
+        int cc = move.side == Side::black ? c : (8 - c);
+        str += '1' + cc;
+    } else {
+        if (move.dest / 9 == move.from / 9) {
+            str += advanceNames[notationIdx][2];
+            int c = move.dest % 9;
+            int cc = move.side == Side::black ? c : (8 - c);
+            str += '1' + cc;
+        } else {
+            str += (move.side == Side::white && move.dest < move.from) || (move.side == Side::black && move.dest > move.from) ? advanceNames[notationIdx][0] : advanceNames[notationIdx][1];
+            str += '0' + std::abs(move.from / 9 - move.dest / 9);
+        }
+    }
+
+    return str;
+}
+
 std::string OpeningBoard::squareString(int pos)
 {
     if (pos < 0 || pos >= 90)
@@ -1083,7 +1603,6 @@ std::string OpeningBoard::squareString(int pos)
     str += std::to_string(9 - r);
     return str;
 }
-
 
 namespace opening {
 

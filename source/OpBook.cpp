@@ -149,7 +149,7 @@ bool OpBook::verifyData(OpeningBoard& board, int sd) const
     }
 
     MoveList moveList;
-    board.gen(moveList, board.side, false);
+    board.gen(moveList, board.side);
 
     for(int i = 0; i < moveList.end; i++) {
         auto move = moveList.list[i];
@@ -294,7 +294,7 @@ Move OpBook::_probe(OpeningBoard& board, MoveList* opMoveList) const
     }
 
     MoveList moveList;
-    board.gen(moveList, board.side, false);
+    board.gen(moveList, board.side);
 
     if (opMoveList) {
         opMoveList->reset();

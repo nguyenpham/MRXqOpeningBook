@@ -42,9 +42,22 @@ ApplicationWindow {
             onCurrentIndexChanged: console.debug(cbItems.get(currentIndex).text + ", " + cbItems.get(currentIndex).color)
         }
 
+        ComboBox {
+            id: chessTypeComboBox
+            Layout.preferredHeight: 30
+            Layout.preferredWidth: 200
+            Layout.alignment: Qt.AlignRight | Qt.AlignTop
+            currentIndex: 0
+            model: ListModel {
+                id: ctItems
+                ListElement { text: "Xiangqi" }
+            }
+            onCurrentIndexChanged: console.debug(cbItems.get(currentIndex).text + ", " + cbItems.get(currentIndex).color)
+        }
+
         Button {
             id: builderbtn
-            text: qsTr("Build & verify")
+            text: qsTr("Build, verify, merge")
             Layout.preferredHeight: 30
             Layout.preferredWidth: 200
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -98,36 +111,6 @@ ApplicationWindow {
                 }
             }
         }
-
-//        Button {
-//            id: boardbtn
-//            Layout.preferredHeight: 30
-//            Layout.preferredWidth: 200
-//            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-//            text: qsTr("Test Board")
-//            property QtObject boardWindow
-
-//            onClicked:{
-//                if (boardWindow != null) {
-//                    boardWindow.raise()
-//                    return;
-//                }
-
-//                var component = Qt.createComponent("BoardView.qml");
-//                if (component.status === Component.Ready) {
-//                    boardWindow = component.createObject(applicationWindow);
-//                    boardWindow.visibleChanged.connect(
-//                                  function() {
-//                                      if (!boardWindow.visible) {
-//                                          boardWindow.destroy()
-//                                          boardWindow = null
-//                                      }
-//                                  }
-//                                  );
-//                }
-//            }
-//        }
     }
-
 
 }

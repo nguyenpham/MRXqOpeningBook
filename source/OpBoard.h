@@ -1,6 +1,6 @@
 
 /*
- This file is part of Felicity Egtb, distributed under MIT license.
+ This file is part of MoonRiver Xiangqi Opening Book, distributed under MIT license.
 
  Copyright (c) 2018 Nguyen Hong Pham
 
@@ -32,6 +32,7 @@
 
 namespace opening {
 
+    extern const std::string originalFen;
     extern const char* pieceTypeName;
     extern const u64 originHashKey;
     extern const u64 hashTable[];
@@ -42,20 +43,28 @@ namespace opening {
         Side side;
 
         // this variable is used in some purpose such as to setup a board
-        int pos;
+        int idx;
 
     public:
         Piece() {}
-        Piece(PieceType _type, Side _side, int _pos = -1) {
-            set(_type, _side, _pos);
+        Piece(PieceType _type, Side _side, int idx = -1) {
+            set(_type, _side, idx);
         }
 
         Piece(PieceType _type, Side _side, Squares square) {
             set(_type, _side, static_cast<int>(square));
         }
 
-        void set(PieceType _type, Side _side, int _pos = -1) {
-            type = _type; side = _side; pos = _pos;
+        void set(PieceType _type, Side _side, int _idx = -1) {
+            type = _type; side = _side; idx = _idx;
+        }
+
+        bool operator == (const Piece& other) const {
+            return type == other.type && side == other.side;
+        }
+
+        bool operator != (const Piece& other) const {
+            return type != other.type || side != other.side;
         }
 
         void setEmpty() {
@@ -101,19 +110,6 @@ namespace opening {
         }
     };
 
-//    class MoveCoreVector {
-//    public:
-//        std::vector<MoveCore> list;
-
-//        void add(const MoveCore& move) {
-//            list.push_back(move);
-//        }
-//        void add(int from, int dest) {
-//            MoveCore move(from, dest);
-//            add(move);
-//        }
-//    };
-
     class Move {
     public:
         int8_t  from, dest;
@@ -133,6 +129,10 @@ namespace opening {
 
         bool operator == (const Move& otherMove) const {
             return from == otherMove.from && dest == otherMove.dest;
+        }
+
+        bool operator != (const Move& otherMove) const {
+            return from != otherMove.from || dest != otherMove.dest;
         }
 
         void set(PieceType _type, Side _side, int _from, int _dest) {
@@ -161,16 +161,27 @@ namespace opening {
         Piece cap;
         u64 hashKey;
 
+        std::vector<int> ambiguousVec;
+        std::string comment;
+        char checkOrMate;
+
     public:
+        Hist() { checkOrMate = 0; }
+
         void set(const Move& _move) { move = _move; }
 
         bool isValid() const {
             return move.isValid() && cap.isValid();
         }
 
+        std::string moveString(Notation notation);
+        std::string moveString_algebraic();
+        std::string moveString_traditional(Notation notation);
+
         static std::string moveString_san(const Move& move);
         static std::string moveString_coordinate(const Move& move);
         static std::string moveString_coordinate(int from, int dest);
+
     };
 
     class MoveList {
@@ -203,17 +214,60 @@ namespace opening {
         }
     };
 
+    class TheResult {
+    public:
+        TheResult() {
+            reset();
+        }
+        TheResult(ResultType _result, ReasonType _reason = ReasonType::noreason, std::string _comment = "") {
+            result = _result;
+            reason = _reason;
+            comment = _comment;
+        }
+
+        void reset() {
+            result = ResultType::noresult;
+            reason = ReasonType::noreason;
+            comment = "";
+        }
+
+        ResultType result;
+        ReasonType reason;
+        std::string comment;
+
+        bool isNone() const {
+            return result == ResultType::noresult;
+        }
+
+        std::string toShortString() const {
+            switch (result) {
+            case ResultType::draw:
+                return "1/2-1/2";
+            case ResultType::win:
+                return "1-0";
+            case ResultType::loss:
+                return "0-1";
+            case ResultType::noresult:
+            default:
+                break;
+            }
+
+            return "";
+        }
+    };
 
     class OpeningBoard {
     private:
         Piece pieces[90];
-        Result result;
+        TheResult result;
 
     public:
         int8_t pieceList[2][16];
         Side side;
 
     public:
+        void newGame(const std::string& fen);
+
         void set(int pos, PieceType type, Side side) {
             pieces[pos].set(type, side);
             pieceList_set((int8_t *)pieceList, pos, type, side);
@@ -227,9 +281,15 @@ namespace opening {
             return pieces[pos].side;
         }
 
-        Result getResult() const {
+        TheResult getResult() const {
             return result;
         }
+
+//        std::string getResultString() const;
+//
+//        Reason getReason() const {
+//            return reason;
+//        }
 
         bool isEmpty(int pos) const {
             return pieces[pos].type == PieceType::empty;
@@ -239,26 +299,35 @@ namespace opening {
             pieces[pos].setEmpty();
         }
 
-        void genLegal(MoveList& moves, Side side);
-        void gen(MoveList& moveList, Side side, bool capOnly = false) const;
+        void genLegal(MoveList& moves, Side side, int from = -1, int dest = -1);
+        void gen(MoveList& moveList, Side side, PieceType type = PieceType::empty, bool capOnly = false) const;
 
         bool isIncheck(Side beingAttackedSide) const;
 
-        void make(int from, int dest);
         void make(const Move& move, Hist& hist);
         void takeBack(const Hist& hist);
 
-        void make(const Move& move);
+        void make(int from, int dest, bool createMoveStrings = false);
+        void make(const Move& move, bool createMoveStrings = false);
         void takeBack();
+
+        TheResult makeRule();
 
         void setResult(const std::string& fen);
 
-        void newGame(std::string fen = "");
         void setFen(const std::string& fen);
+        std::string startingFenString() const {
+            return startingFen;
+        }
+
         bool setup(const std::vector<Piece> pieceVec, Side side);
+
+        void cloneFrom(const OpeningBoard& board);
 
         void show(const char* msg = nullptr) const;
 
+        std::string getPgn() const;
+        std::string getFen() const;
         std::string getFen(Side side, int halfCount = 0, int fullMoveCount = 0) const;
 
         void reset() {
@@ -266,7 +335,7 @@ namespace opening {
                 setEmpty(i);
             }
             histList.clear();
-            result = Result::noresult;
+            result.result = ResultType::noresult;
         }
 
         static int flip(int pos, FlipMode flipMode);
@@ -294,9 +363,26 @@ namespace opening {
         }
         void initHashKey();
 
+        bool isLegalMove(const Move& move) {
+            return isLegalMove(move.from, move.dest);
+        }
+        bool isLegalMove(int from, int dest);
+
+        Move moveFromString(const std::string& str);
+        Move moveFromLanString(std::string str);
+        Move moveFromSanString(std::string str);
+
+        Move moveFromString_san(const std::string& s);
+        static Move moveFromString_algebraicCoordinates(const std::string& s);
+
+        void collectExtraMoveInfo(const Move& makingmove, Hist& hist);
+        void collectExtraMoveInfo_checkOrMate(Hist& hist);
+
         static std::string squareString(int pos);
 
     private:
+        Move findLegalMove(PieceType pieceType, int fromCol, int fromRow, int dest);
+
         std::string toString() const;
 
         void gen_addMove(MoveList& moveList, int from, int dest, bool capOnly) const;
@@ -317,6 +403,7 @@ namespace opening {
         bool pieceList_takeback(const Hist& hist);
 
     private:
+        std::string startingFen;
         void xorHashKey(int pos);
 
         u64 hashKey;

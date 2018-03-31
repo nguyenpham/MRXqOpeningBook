@@ -83,23 +83,48 @@ namespace opening {
         king, advisor, elephant, rook, cannon, horse, pawn, empty, offboard
     };
 
-    enum class Result {
+    enum class ResultType {
         noresult, win, draw, loss
     };
 
-    enum class EgtbType {
-        dtm, newdtm, lookup, none
+    enum class ReasonType {
+        noreason,
+        mate,
+        stalemate,
+        resignation,
+        agreement,
+        repeatition,
+
+        perpetualcheck,
+        perpetualchase,
+        bothperpetualchase,
+
+        disconnection,
+        stalledconnection,
+
+        illegalmove,
+
+        extracomment,
+
+        timeout
     };
 
-    enum EgtbLoadStatus {
-        none, loaded, error
-    };
+//    enum class EgtbType {
+//        dtm, newdtm, lookup, none
+//    };
+//
+//    enum EgtbLoadStatus {
+//        none, loaded, error
+//    };
+//
+//    enum AcceptScore {
+//        real,           // return real / correct scores
+//        winning         // accept sometimes the score is EGTB_SCORE_WINNING, says the position is winning but it is not real value of Distance To Mate
+//    };
 
-    enum AcceptScore {
-        real,           // return real / correct scores
-        winning         // accept sometimes the score is EGTB_SCORE_WINNING, says the position is winning but it is not real value of Distance To Mate
+    enum Notation {
+        san, algebraic_coordinate, traditional_en, traditional_cn, traditional_vn
     };
-
 
     std::vector<std::string> splitString(const std::string& string, const std::string& regexString);
     std::vector<std::string> split(const std::string &s, char delim);

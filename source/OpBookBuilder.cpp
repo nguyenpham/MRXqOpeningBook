@@ -11,45 +11,64 @@
 
 using namespace opening;
 
-void OpBookBuilder::create(std::map<std::string, std::string> paramMap) {
+void dumbReportString(std::string msg) {}
+void dumbReportNumbers(int fileCnt, int gameCnt, int nodeCnt, int addedNodeCnt) {}
+
+void OpBookBuilder::create(std::map<std::string, std::string> paramMap,
+                           std::function<void(std::string)> reportString,
+                           std::function<void(int, int, int, int)> reportNumbers //(fileCnt, gameCnt, nodeCnt, addedNodeCnt)
+                           ) {
+    m_reportFileCnt = m_reportGameCnt = m_reportNodeCnt = 0;
+
     auto it = paramMap.find("folder");
     if (it != paramMap.end()) {
         std::vector<std::string> folderVec;
         folderVec.push_back(it->second);
-        create(folderVec, paramMap);
+        create(folderVec, paramMap, reportString, reportNumbers);
     }
 
     it = paramMap.find("file");
     if (it != paramMap.end()) {
-        create(it->second, paramMap);
+        create(it->second, paramMap, reportString, reportNumbers);
     }
 
+    std::string bookPath;
     it = paramMap.find("out");
     if (it == paramMap.end() || it->second.empty()) {
-        return;
+        bookPath = "./openingbook.xob";
+    } else {
+        bookPath = it->second;
     }
 
     if (header.size[0] + header.size[1] > 0) {
-        createSave(it->second, paramMap);
+        createSave(bookPath, paramMap);
     } else if (openingVerbose) {
         std::cerr << "Error: book is empty" << std::endl;
     }
 }
 
-void OpBookBuilder::create(const std::vector<std::string>& folderVec, const std::map<std::string, std::string>& paramMap) {
-
+void OpBookBuilder::create(const std::vector<std::string>& folderVec, const std::map<std::string, std::string>& paramMap, std::function<void(std::string)> reportString, std::function<void(int, int, int, int)> reportNumbers)
+{
     for(auto && folder : folderVec) {
         std::vector<std::string> pathVec = listdir(folder);
         for(auto && path : pathVec) {
-            create(path, paramMap);
+            create(path, paramMap, reportString, reportNumbers);
         }
     }
 }
 
-void OpBookBuilder::create(const std::string& inputPath, const std::map<std::string, std::string>& paramMap) {
+
+void OpBookBuilder::create(const std::string& inputPath, const std::map<std::string, std::string>& paramMap, std::function<void(std::string)> reportString, std::function<void(int, int, int, int)> reportNumbers)
+{
     if (openingVerbose) {
         std::cout << "\tgame: " << inputPath << std::endl;
     }
+
+//    if (report) {
+        reportString(inputPath);
+//    }
+
+    m_reportFileCnt++;
 
     OpeningBoard board;
     GameReader gameReader(inputPath);
@@ -95,20 +114,22 @@ void OpBookBuilder::create(const std::string& inputPath, const std::map<std::str
 
     // Add games
     while(gameReader.nextGame(board)) {
+        m_reportGameCnt++;
+
         if (board.getHistList().size() < minply) {
             if (openingVerbose) {
-                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << ". Game too short" << std::endl;
+                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << " - game too short" << std::endl;
             }
             continue;
         }
 
         Side workingSide = Side::none;
 
-        if (board.getResult() == Result::win) {
+        if (board.getResult().result == ResultType::win) {
             if (forSide & White) {
                 workingSide = Side::white;
             }
-        } else if (board.getResult() == Result::loss) {
+        } else if (board.getResult().result == ResultType::loss) {
             if (forSide & Black) {
                 workingSide = Side::black;
             }
@@ -116,14 +137,13 @@ void OpBookBuilder::create(const std::string& inputPath, const std::map<std::str
 
         if (workingSide == Side::none) {
             if (openingVerbose) {
-                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << ". Result is not right" << std::endl;
+                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << " - result is not suitable" << std::endl;
             }
             continue;
         }
 
         std::vector<Move> moves;
         for(auto && hist : board.getHistList()) {
-//            moveList.add(hist.move);
             moves.push_back(hist.move);
         }
 
@@ -133,7 +153,7 @@ void OpBookBuilder::create(const std::string& inputPath, const std::map<std::str
 
         if (board.key() != originHashKey) {
             if (openingVerbose) {
-                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << ". It is not from the origin" << std::endl;
+                std::cerr << "\t\tignore game " << inputPath << ", idx: " << gameReader.currentGameIdx() << " - not from the origin" << std::endl;
             }
             continue;
         }
@@ -152,9 +172,11 @@ void OpBookBuilder::create(const std::string& inputPath, const std::map<std::str
             }
         }
     }
+
+    reportNumbers(m_reportFileCnt, m_reportGameCnt, m_reportNodeCnt, header.size[0] + header.size[1]);
 }
 
-void OpBookBuilder::create_checkFlipping(OpeningBoard& board, std::vector<Move>& moves, Side workingSide)
+void OpBookBuilder::create_checkFlipping(opening::OpeningBoard& board, std::vector<opening::Move>& moves, opening::Side workingSide)
 {
     bool needHorizontalFlip = false;
     Hist hist;
@@ -178,12 +200,6 @@ void OpBookBuilder::create_checkFlipping(OpeningBoard& board, std::vector<Move>&
 
     if (needHorizontalFlip) {
         board.flip(opening::FlipMode::horizontal);
-//        for(int i = 0; i < moveList.end; i++) {
-//            auto move = moveList.list + i;
-//            move->from = OpeningBoard::flip(move->from, opening::FlipMode::horizontal);
-//            move->dest = OpeningBoard::flip(move->dest, opening::FlipMode::horizontal);
-//        }
-
         for(auto && move : moves) {
             move.from = OpeningBoard::flip(move.from, opening::FlipMode::horizontal);
             move.dest = OpeningBoard::flip(move.dest, opening::FlipMode::horizontal);
@@ -193,7 +209,7 @@ void OpBookBuilder::create_checkFlipping(OpeningBoard& board, std::vector<Move>&
     }
 }
 
-void OpBookBuilder::createInit(Side side) {
+void OpBookBuilder::createInit(opening::Side side) {
     int sd = static_cast<int>(side);
 
     if (bookData[sd]) {
@@ -206,7 +222,7 @@ void OpBookBuilder::createInit(Side side) {
     bookData[sd] = (BookItem*)malloc(allocatedSizes[sd] * sizeof(BookItem) + 32);
 }
 
-bool OpBookBuilder::create_add(const OpeningBoard& board)
+bool OpBookBuilder::create_add(const opening::OpeningBoard& board)
 {
     auto key = board.key();
     int sd = 1 - static_cast<int>(board.side);
@@ -216,6 +232,8 @@ bool OpBookBuilder::create_add(const OpeningBoard& board)
         header.size[sd]++;
         return true;
     }
+
+    m_reportNodeCnt++;
 
     i64 idx = 0;
     i64 i = 0, j = header.size[sd] - 1;
@@ -248,7 +266,6 @@ bool OpBookBuilder::create_add(const OpeningBoard& board)
         }
         free(tmpBuf);
     } else {
-//        std::cout << "idx = " << idx << ", key = " << key << ", ket at 0 = " << bookData[sd][0].key() << ",  sz = " << header.size[sd] << std::endl;
         for(i64 i = header.size[sd]; i > idx; i--) {
             bookData[sd][i] = bookData[sd][i - 1];
         }
@@ -264,7 +281,6 @@ bool OpBookBuilder::createSave(const std::string& path_, const std::map<std::str
     path = path_;
 
     std::ofstream outfile (path_, std::ios::binary);
-    //    outfile.seekp(0);
 
     assert(header.isValid());
     assert(header.size[0] + header.size[1] > 0);
@@ -296,7 +312,7 @@ bool OpBookBuilder::createSave(const std::string& path_, const std::map<std::str
         if (maxgame <= 0) {
             for(int sd = 0; sd < 2 && ok; sd++) {
                 if (header.size[sd] > 0) {
-                    if (!outfile.write((const char*)bookData, header.size[sd] * sizeof(BookItem))) {
+                    if (!outfile.write((const char*)bookData[sd], header.size[sd] * sizeof(BookItem))) {
                         ok = false;
                         break;
                     }
@@ -343,7 +359,7 @@ bool OpBookBuilder::createSave(const std::string& path_, const std::map<std::str
         if (ok) {
             std::cout << "Book has been created, #items: " << header.size[0] << ", " << header.size[1] << ", starting: " << startSize[0] << ", " << startSize[1] << std::endl;
         } else {
-            std::cerr << "Error: Cannot write data" << std::endl;
+            std::cerr << "Error: Cannot write book data." << std::endl;
         }
     }
 

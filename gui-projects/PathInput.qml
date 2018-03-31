@@ -10,6 +10,7 @@ import Qt.labs.settings 1.0
 
 RowLayout {
     id: root
+    spacing: 5
 
     property bool forFile: true
     property string path: ""
@@ -54,7 +55,7 @@ RowLayout {
         enabled: root.enabled
         width: 200
         text: forFile ? qsTr("Opening file:") : qsTr("Game folder:")
-        font.pixelSize: 12
+//        font.pixelSize: 12
     }
 
     TextField {
@@ -63,13 +64,13 @@ RowLayout {
         placeholderText: forFile ? qsTr("Select opening file") : qsTr("Select a folder")
         Layout.fillWidth: true
 
-        style: TextFieldStyle {
-            textColor: "black"
-            background: Rectangle {
-                radius: 2
-                border.width: 1
-            }
-        }
+//        style: TextFieldStyle {
+//            textColor: "black"
+//            background: Rectangle {
+//                radius: 2
+//                border.width: 1
+//            }
+//        }
 
         onTextChanged: {
             path = text
