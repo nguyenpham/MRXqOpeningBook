@@ -51,6 +51,7 @@ RowLayout {
     // Opening path
     Label {
         id: label
+        enabled: root.enabled
         width: 200
         text: forFile ? qsTr("Opening file:") : qsTr("Game folder:")
         font.pixelSize: 12
@@ -58,6 +59,7 @@ RowLayout {
 
     TextField {
         id: pathTextField
+        enabled: root.enabled
         placeholderText: forFile ? qsTr("Select opening file") : qsTr("Select a folder")
         Layout.fillWidth: true
 
@@ -77,6 +79,7 @@ RowLayout {
 
     Button {
         id: browserBtn
+        enabled: root.enabled
         text: qsTr("Browser...")
         onClicked: fileDialog.open()
     }

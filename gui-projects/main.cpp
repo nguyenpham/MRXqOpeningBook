@@ -5,6 +5,7 @@
 
 #include "openingtreemodel.h"
 #include "boardadapter.h"
+#include "openingbuilderadapter.h"
 
 
 int main(int argc, char *argv[])
@@ -13,6 +14,7 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<OpeningTreeModel>("OpeningTreeViewModel", 1, 0, "OpeningModel" );
     qmlRegisterType<BoardAdapter>("TheBoardAdapter", 1, 0, "BoardAdapter" );
+    qmlRegisterType<OpeningBuilderAdapter>("TheOpeningBuilderAdapter", 1, 0, "OpeningBuilderAdapter" );
 
     QGuiApplication app(argc, argv);
 

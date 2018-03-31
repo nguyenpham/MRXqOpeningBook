@@ -21,7 +21,8 @@ SOURCES += main.cpp \
     ../source/Opening.cpp \
     openingtreemodel.cpp \
     boardadapter.cpp \
-    treeitem.cpp
+    treeitem.cpp \
+    openingbuilderadapter.cpp
 
 RESOURCES += qml.qrc
 
@@ -44,6 +45,7 @@ HEADERS += \
     ../source/Opening.h \
     openingtreemodel.h \
     boardadapter.h \
-    treeitem.h
+    treeitem.h \
+    openingbuilderadapter.h
 
 DISTFILES +=

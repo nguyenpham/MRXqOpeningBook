@@ -85,6 +85,56 @@ Window{
             Layout.fillWidth: true
             Layout.fillHeight: true
 
+//            Component {
+//                id :  spinBoxDelegate
+//                Item {
+//                    id : spinBoxDelegateItem
+//                    SpinBox {
+//                        id: spinBoxDelegateSpin
+//                        Layout.preferredHeight: 20
+//                        Layout.preferredWidth: 120
+//                        value: styleData.value
+//                        visible: false
+//                        onEditingFinished: {
+//                            //onClicked: state = 'Standard';
+//                            spinBoxDelegateLabel.text = value;
+//                            spinBoxDelegateItem.state = 'Standard';
+//                            print("spinBoxDelegateSpin onEditingFinished")
+//                        }
+//                    }
+//                    Label {
+//                        id: spinBoxDelegateLabel
+//                        text: styleData.value
+//                        MouseArea {
+//                            anchors.fill: parent
+//                            propagateComposedEvents: true
+//                            onClicked: {
+//                                console.log("clicked blue")
+//                                mouse.accepted = true
+//                            }
+
+//                            onDoubleClicked: {
+//                                spinBoxDelegateItem.state = 'Details';
+//                                spinBoxDelegateSpin.forceActiveFocus()
+//                            }
+//                        }
+//                    }
+//                    states:  [
+//                        State {
+//                            name: "Details"
+//                            PropertyChanges { target: spinBoxDelegateSpin; visible: true }
+//                            PropertyChanges { target: spinBoxDelegateLabel; visible: false }
+//                        },
+//                        State {
+//                            name: "Standard"
+//                            PropertyChanges { target: spinBoxDelegateSpin; visible: false }
+//                            PropertyChanges { target: spinBoxDelegateLabel; visible: true }
+//                        }
+//                    ]
+//                }
+//            }
+
+
             TreeView {
                 id: treeView
                 backgroundVisible: true
@@ -111,16 +161,6 @@ Window{
                     onSelectionChanged: doExpandNode(selectedIndexes[0], true)
                 }
 
-//                Connections {
-//                    target: treeView.selection
-//                    onCurrentIndexChanged: {
-//                        console.log("onCurrentIndexChanged row: " + treeView.selection.currentIndex.row + ", index = " + index.row)
-//                    }
-//                    onSelectionChanged: {
-//                        console.log("onSelectionChanged Row: " + treeView.currentIndex.row + " Parent : " + treeView.currentIndex.parent.row)
-//                    }
-//                }
-
                 model: openingModel
 
                 TableViewColumn {
@@ -128,14 +168,58 @@ Window{
                     title: "Title"
                 }
 
-                itemDelegate: Item {
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: styleData.value.indexOf("@") >= 0 ? "blue" : styleData.value.indexOf("/") >= 0 ? "black" : "gray" //styleData.textColor
-                        elide: styleData.elideMode
-                        text: styleData.value.replace("@", "")
+//                itemDelegate: spinBoxDelegate
+//                itemDelegate: Item {
+//                    Text {
+//                        anchors.verticalCenter: parent.verticalCenter
+//                        color: styleData.value.indexOf("@") >= 0 ? "blue" : styleData.value.indexOf("/") >= 0 ? "black" : "gray" //styleData.textColor
+//                        elide: styleData.elideMode
+//                        text: styleData.value.replace("@", "")
+//                    }
+//                }
+
+                itemDelegate:
+//                    Component {
+//                    id :  spinBoxDelegate
+                    Item {
+                        id : spinBoxDelegateItem
+                        SpinBox {
+                            id: spinBoxDelegateSpin
+                            Layout.preferredHeight: 20
+                            Layout.preferredWidth: 120
+                            value: styleData.value
+                            visible: false
+                            onEditingFinished: {
+                                spinBoxDelegateLabel.text = value;
+                                spinBoxDelegateItem.state = 'Viewing';
+                            }
+                        }
+                        Label {
+                            id: spinBoxDelegateLabel
+                            text: styleData.value
+                            MouseArea {
+                                anchors.fill: parent
+                                propagateComposedEvents: true
+                                onDoubleClicked: {
+                                    spinBoxDelegateItem.state = 'Editing';
+                                    spinBoxDelegateSpin.forceActiveFocus()
+                                }
+                            }
+                        }
+                        states:  [
+                            State {
+                                name: "Editing"
+                                PropertyChanges { target: spinBoxDelegateSpin; visible: true }
+                                PropertyChanges { target: spinBoxDelegateLabel; visible: false }
+                            },
+                            State {
+                                name: "Viewing"
+                                PropertyChanges { target: spinBoxDelegateSpin; visible: false }
+                                PropertyChanges { target: spinBoxDelegateLabel; visible: true }
+                            }
+                        ]
                     }
-                }
+//                }
             }
 
             ColumnLayout {

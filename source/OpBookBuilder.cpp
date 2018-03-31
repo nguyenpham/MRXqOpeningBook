@@ -257,70 +257,8 @@ bool OpBookBuilder::create_add(const OpeningBoard& board)
     header.size[sd]++;
     bookData[sd][idx].incValue(key);
 
-//    if (header.size[sd]) {
-//        for (i64 i = 0; i < header.size[sd]; i++) {
-//            std::cout << i << ", " << bookData[sd][i].key() << ", val = " << bookData[sd][i].value << std::endl;
-//        }
-//    }
-//    assert(verifyData(sd));
-
     return true;
 }
-
-//void OpBookBuilder::create_setupAllChildrenValues() {
-//    for(int sd = 0; sd < 2; sd++) {
-//        for(int idx = 0; idx < header.size[sd]; idx++) {
-//            create_setupChildrenValues(idx, sd);
-//        }
-//    }
-//}
-//
-//void OpBookBuilder::create_setupChildrenValues(int idx, int sd) {
-//    OpeningBoard board;
-//    board.pieceList_setupBoard((const int8_t *)creatingBookData[sd][idx].pieceList);
-//    board.initHashKey();
-//    board.side = static_cast<Side>(sd);
-//    create_setupChildrenValues(board);
-//}
-//
-//void OpBookBuilder::create_setupChildrenValues(OpeningBoard& board) {
-//    opening::MoveList moveList;
-//    board.gen(moveList, board.side, false);
-//    int sd = static_cast<int>(board.side);
-//
-//    std::vector<std::pair<int, u32>> idxhitVec;
-//
-//    Hist hist;
-//    for(int i = 0; i < moveList.end; i++) {
-//        auto move = moveList.list[i];
-//        board.make(move, hist);
-//
-//        auto key = board.key();
-//
-//        i64 newIdx = find(key, (const char*)creatingBookData[sd], header.size[sd], sizeof(CreatingBookItem));
-//        if (newIdx >= 0) {
-//            std::pair<u64, u32> idxhit;
-//            idxhit.first = newIdx;
-//            idxhit.second = creatingBookData[sd][newIdx].hit();
-//            idxhitVec.push_back(idxhit);
-//        }
-//        board.takeBack(hist);
-//    }
-//
-//    if (idxhitVec.empty()) {
-//        return;
-//    }
-//
-//    std::sort(idxhitVec.begin(), idxhitVec.end(), [](const std::pair<int, u32> & a, const std::pair<int, u32> & b) -> bool {
-//        return a.second < b.second;
-//    });
-//
-//    const u16 IncValue = 10;
-//    for(int i = 0; i < idxhitVec.size(); i++) {
-//        auto idx = idxhitVec[i].first; assert(idx >= 0 && idx < header.size[sd]);
-//        creatingBookData[sd][idx].value = std::max(creatingBookData[sd][idx].value, (u16)((i + 1) * IncValue));
-//    }
-//}
 
 bool OpBookBuilder::createSave(const std::string& path_, const std::map<std::string, std::string>& paramMap) {
     path = path_;
