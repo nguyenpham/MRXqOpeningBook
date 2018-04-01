@@ -31,7 +31,6 @@ OpBook::~OpBook()
 
 ///////////////////////////////////////////////////////////////////////
 bool OpBook::load(const std::string& path_) {
-    assert(path_.size() > 8);
     path = path_;
 
     std::ifstream file(path, std::ios::binary);
@@ -65,103 +64,103 @@ bool OpBook::load(const std::string& path_) {
     return ok;
 }
 
-bool OpBook::verifyData() const
-{
-    if (!header.isValid() || header.size[0] < 0 || header.size[1] < 0 || header.size[0] + header.size[1] <= 0) {
-        std::cerr << "Error verifyData" << std::endl;
-        return false;
-    }
+//bool OpBook::verifyData() const
+//{
+//    if (!header.isValid() || header.size[0] < 0 || header.size[1] < 0 || header.size[0] + header.size[1] <= 0) {
+//        std::cerr << "Error verifyData" << std::endl;
+//        return false;
+//    }
 
-    auto startTime = time(NULL);
+//    auto startTime = time(NULL);
 
-    for(int sd = 1; sd < 2; sd++) {
-        if (!verifyData(sd)) {
-            return false;
-        }
-    }
+//    for(int sd = 1; sd < 2; sd++) {
+//        if (!verifyData(sd)) {
+//            return false;
+//        }
+//    }
 
-    if (openingVerbose) {
-        auto elapsed_secs = std::max(1, (int)(time(NULL) - startTime));
-        std::cout << "verify successfully, elapsed (s): " << elapsed_secs << std::endl;
-    }
-    return true;
-}
+//    if (openingVerbose) {
+//        auto elapsed_secs = std::max(1, (int)(time(NULL) - startTime));
+//        std::cout << "verify successfully, elapsed (s): " << elapsed_secs << std::endl;
+//    }
+//    return true;
+//}
 
-bool OpBook::verifyData(int sd) const
-{
-    if (header.size[sd] == 0) {
-        return true;
-    }
-
-
-    u16 maxVal = 0;
-    for (i64 idx = 0, prevKey = 0; idx < header.size[sd]; idx++) {
-        auto p = bookData[sd] + idx;
-        if (prevKey >= p->key() || p->value == 0) {
-            std::cerr << "Error verifyData" << std::endl;
-            return false;
-        }
-        prevKey = p->key();
-        maxVal = std::max(maxVal, p->value);
-    }
-
-    std::cout << "verifyData, maxVal = " << maxVal << std::endl;
-
-    OpeningBoard board;
-    board.setFen("");
-    board.show();
-
-    for (i64 idx = 0; idx < header.size[sd]; idx++) {
-        auto p = bookData[sd] + idx;
-        p->value = 0;
-    }
-
-    verifyData(board, sd);
+//bool OpBook::verifyData(int sd) const
+//{
+//    if (header.size[sd] == 0) {
+//        return true;
+//    }
 
 
-    i64 reachableCnt = 0;
-    for (i64 idx = 0; idx < header.size[sd]; idx++) {
-        auto p = bookData[sd] + idx;
-        if (p->value > 0) {
-            reachableCnt++;
-        }
-    }
+//    u16 maxVal = 0;
+//    for (i64 idx = 0, prevKey = 0; idx < header.size[sd]; idx++) {
+//        auto p = bookData[sd] + idx;
+//        if (prevKey >= p->key() || p->value == 0) {
+//            std::cerr << "Error verifyData" << std::endl;
+//            return false;
+//        }
+//        prevKey = p->key();
+//        maxVal = std::max(maxVal, p->value);
+//    }
 
-    std::cout << "verifyData, sd = " << sd << ", reachableCnt = " << reachableCnt << " of " << header.size[sd] << std::endl;
-    return true;
-}
+//    std::cout << "verifyData, maxVal = " << maxVal << std::endl;
 
-bool OpBook::verifyData(OpeningBoard& board, int sd) const
-{
-    auto side = board.side;
-    auto sameSide = static_cast<int>(side) == sd;
-    if (!sameSide) {
-        auto idx = find(board.key(), sd);
-        if (idx < 0) {
-            return false;
-        }
+//    OpeningBoard board;
+//    board.setFen("");
+//    board.show();
 
-        if (bookData[sd][idx].value) {
-            return true;
-        }
+//    for (i64 idx = 0; idx < header.size[sd]; idx++) {
+//        auto p = bookData[sd] + idx;
+//        p->value = 0;
+//    }
 
-        bookData[sd][idx].value = 1;
-    }
+//    verifyData(board, sd);
 
-    MoveList moveList;
-    board.gen(moveList, board.side);
 
-    for(int i = 0; i < moveList.end; i++) {
-        auto move = moveList.list[i];
-        board.make(move);
-        if (!board.isIncheck(side)) {
-            verifyData(board, sd);
-        }
-        board.takeBack();
-    }
+//    i64 reachableCnt = 0;
+//    for (i64 idx = 0; idx < header.size[sd]; idx++) {
+//        auto p = bookData[sd] + idx;
+//        if (p->value > 0) {
+//            reachableCnt++;
+//        }
+//    }
 
-    return true;
-}
+//    std::cout << "verifyData, sd = " << sd << ", reachableCnt = " << reachableCnt << " of " << header.size[sd] << std::endl;
+//    return true;
+//}
+
+//bool OpBook::verifyData(OpeningBoard& board, int sd) const
+//{
+//    auto side = board.side;
+//    auto sameSide = static_cast<int>(side) == sd;
+//    if (!sameSide) {
+//        auto idx = find(board.key(), sd);
+//        if (idx < 0) {
+//            return false;
+//        }
+
+//        if (bookData[sd][idx].value) {
+//            return true;
+//        }
+
+//        bookData[sd][idx].value = 1;
+//    }
+
+//    MoveList moveList;
+//    board.gen(moveList, board.side);
+
+//    for(int i = 0; i < moveList.end; i++) {
+//        auto move = moveList.list[i];
+//        board.make(move);
+//        if (!board.isIncheck(side)) {
+//            verifyData(board, sd);
+//        }
+//        board.takeBack();
+//    }
+
+//    return true;
+//}
 
 bool OpBook::save(std::string path_) {
     if (path_.empty()) {

@@ -98,19 +98,24 @@ namespace opening {
 
         bool load(const std::string& path);
         bool save(std::string path = "");
-        bool verifyData() const;
 
         i64 find(u64 key, int sd) const;
         u16 getValue(u64 idx, int sd) const;
 
+        BookHeader* getHeader() {
+            return &header;
+        }
+
+        BookItem* getData(int sd) {
+            return bookData[sd];
+        }
+
+//        bool verifyData(OpeningBoard& board, int sd) const;
+
     protected:
         Move _probe(OpeningBoard& board, MoveList* opMoveList = nullptr) const;
-
         static i64 find(u64 key, const char* data, i64 itemCount, int itemSize);
         
-        bool verifyData(int sd) const;
-        bool verifyData(OpeningBoard& board, int sd) const;
-
     protected:
         BookHeader header;
 

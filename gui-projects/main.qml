@@ -25,34 +25,39 @@ ApplicationWindow {
     ColumnLayout {
         anchors.rightMargin: 4
         anchors.leftMargin: 4
-        anchors.bottomMargin: 4
+        anchors.bottomMargin: 12
         anchors.topMargin: 4
         anchors.fill: parent
 
-        ComboBox {
-            id: languageComboBox
-            Layout.preferredHeight: 30
-            Layout.preferredWidth: 200
+        ColumnLayout {
+//            width: parent.width
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            currentIndex: 0
-            model: ListModel {
-                id: cbItems
-                ListElement { text: "English" }
+            spacing: 0
+            ComboBox {
+                id: languageComboBox
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 200
+//                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                currentIndex: 0
+                model: ListModel {
+                    id: cbItems
+                    ListElement { text: "English" }
+                }
+                onCurrentIndexChanged: console.debug(cbItems.get(currentIndex).text + ", " + cbItems.get(currentIndex).color)
             }
-            onCurrentIndexChanged: console.debug(cbItems.get(currentIndex).text + ", " + cbItems.get(currentIndex).color)
-        }
 
-        ComboBox {
-            id: chessTypeComboBox
-            Layout.preferredHeight: 30
-            Layout.preferredWidth: 200
-            Layout.alignment: Qt.AlignRight | Qt.AlignTop
-            currentIndex: 0
-            model: ListModel {
-                id: ctItems
-                ListElement { text: "Xiangqi" }
+            ComboBox {
+                id: chessTypeComboBox
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 200
+                currentIndex: 0
+                model: ListModel {
+                    id: ctItems
+                    ListElement { text: "Xiangqi" }
+//                    ListElement { text: "Chess" }
+                }
+                onCurrentIndexChanged: console.debug(cbItems.get(currentIndex).text + ", " + cbItems.get(currentIndex).color)
             }
-            onCurrentIndexChanged: console.debug(cbItems.get(currentIndex).text + ", " + cbItems.get(currentIndex).color)
         }
 
         Button {

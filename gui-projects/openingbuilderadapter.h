@@ -44,6 +44,7 @@ public:
     explicit OpeningBuilderAdapter(QObject *parent = nullptr);
 
     Q_INVOKABLE void create(QString folder, QString openingPath, QString info, int sides,int minGameLength, int addToLength, int repeatCnt);
+    Q_INVOKABLE void verify(QString openingPath);
 
 signals:
     void taskDone();
@@ -53,6 +54,8 @@ signals:
 public slots:
 
 private:
+    void doTask(int task, std::map<std::string, std::string>& paramMap);
+
     TaskThread* m_taskThread;
 
 //    opening::OpBookBuilder m_builder;
