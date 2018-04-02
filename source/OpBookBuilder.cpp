@@ -45,6 +45,7 @@ void OpBookBuilder::create(std::map<std::string, std::string> paramMap,
     } else if (openingVerbose) {
         std::cerr << "Error: book is empty" << std::endl;
     }
+    reportString("Task done!");
 }
 
 void OpBookBuilder::create(const std::vector<std::string>& folderVec, const std::map<std::string, std::string>& paramMap, std::function<void(std::string)> reportString, std::function<void(int, int, int, int)> reportNumbers)

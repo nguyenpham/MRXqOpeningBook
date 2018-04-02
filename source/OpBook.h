@@ -112,6 +112,8 @@ namespace opening {
 
 //        bool verifyData(OpeningBoard& board, int sd) const;
 
+        bool updateValue(u64 key, int value, Side side, int saveTo);
+
     protected:
         Move _probe(OpeningBoard& board, MoveList* opMoveList = nullptr) const;
         static i64 find(u64 key, const char* data, i64 itemCount, int itemSize);

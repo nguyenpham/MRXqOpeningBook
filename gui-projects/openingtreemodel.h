@@ -35,6 +35,8 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
 
+    Q_INVOKABLE void updateValue(const QModelIndex &index, const QVariant &value, int saveTo);
+
     QHash<int, QByteArray> roleNames() const override;
     Q_INVOKABLE QVariantList selectionChanged(const QModelIndex &index);
 
@@ -49,7 +51,7 @@ private:
 
     bool _expand(TreeItem* node);
     bool buildTree(TreeItem* treeItem, opening::OpeningBoard& board, int sd, int ply);
-
+    void getLine(const TreeItem* node, std::vector<opening::MoveCore>& moves, opening::OpeningBoard& board);
     TreeItem *getItem(const QModelIndex &index) const;
 
     TreeItem *rootItem;

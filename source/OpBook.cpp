@@ -324,3 +324,17 @@ Move OpBook::_probe(OpeningBoard& board, MoveList* opMoveList) const
 }
 
 
+bool OpBook::updateValue(u64 key, int value, Side side, int saveTo)
+{
+    int sd = static_cast<int>(side);
+    i64 idx = find(key, sd);
+    if (idx < 0) {
+        return false;
+    }
+    if (bookData[sd][idx].value != value) {
+        bookData[sd][idx].value = value;
+        return save(path);
+    }
+
+    return true;
+}

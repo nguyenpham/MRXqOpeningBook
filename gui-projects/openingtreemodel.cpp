@@ -135,24 +135,42 @@ bool OpeningTreeModel::_expand(TreeItem* node)
 
     node->prop |= TreeItem::Prop_hasExpanded;
 
-    std::vector<opening::Move> moves;
-    for(auto nd = node; nd && nd->from != nd->dest; nd = nd->parent()) {
-        opening::Move move(nd->from, nd->dest);
-        moves.insert(moves.begin(), move);
-//        qDebug() << "OpeningTreeModel::expand, nd " << nd->from << "->" << nd->dest << ", moves sz = " << moves.size();
-    }
+//    std::vector<opening::MoveCore> moves;
+//    for(auto nd = node; nd && nd->from != nd->dest; nd = nd->parent()) {
+//        opening::MoveCore move(nd->from, nd->dest);
+//        moves.insert(moves.begin(), move);
+//    }
 
+//    opening::OpeningBoard board;
+//    board.setFen("");
+
+//    for(auto && move : moves) {
+//        board.make(move.from, move.dest);
+//    }
+
+    std::vector<opening::MoveCore> moves;
     opening::OpeningBoard board;
-    board.setFen("");
-
-    for(auto && move : moves) {
-        board.make(move.from, move.dest);
-    }
+    getLine(node, moves, board);
 
     auto sd = static_cast<int>(m_showingSide);
     buildTree(node, board, sd, 3);
 
     return true;
+}
+
+void OpeningTreeModel::getLine(const TreeItem* node, std::vector<opening::MoveCore>& moves, opening::OpeningBoard& board)
+{
+    moves.clear();
+    for(const TreeItem* nd = node; nd && nd->from != nd->dest; nd = nd->parent()) {
+        opening::MoveCore move(nd->from, nd->dest);
+        moves.insert(moves.begin(), move);
+    }
+
+    board.setFen("");
+
+    for(auto && move : moves) {
+        board.make(move.from, move.dest);
+    }
 }
 
 int OpeningTreeModel::columnCount(const QModelIndex& parent) const
@@ -244,5 +262,26 @@ int OpeningTreeModel::rowCount(const QModelIndex &parent) const
 }
 
 bool OpeningTreeModel::setData(const QModelIndex &index, const QVariant &value, int role) {
+    qDebug() << "OpeningTreeModel::setData, index = " << index << ", value = " << value;
     return true;
+}
+
+void OpeningTreeModel::updateValue(const QModelIndex &index, const QVariant &value, int saveTo) {
+    qDebug() << "OpeningTreeModel::updateValue, index = " << index << ", value = " << value << ", saveTo = " << saveTo;
+
+    if (!index.isValid()) {
+        return;
+    }
+
+    auto node = static_cast<TreeItem*>(index.internalPointer());
+    if (!node || node == rootItem || !(node->prop & TreeItem::Prop_hasValue)) {
+        return;
+    }
+
+    std::vector<opening::MoveCore> moves;
+    opening::OpeningBoard board;
+    getLine(node, moves, board);
+
+    int v = (int)value.toDouble();
+    m_opBook.updateValue(board.key(), v, m_showingSide, saveTo);
 }

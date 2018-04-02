@@ -17,6 +17,7 @@ public:
     QString data() const;
     void addChild(TreeItem* child);
     TreeItem *parent();
+    const TreeItem *parent() const;
     bool removeChildren(int position, int count);
     int childNumber() const;
 

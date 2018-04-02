@@ -93,6 +93,11 @@ TreeItem *TreeItem::parent()
     return parentItem;
 }
 
+const TreeItem *TreeItem::parent() const
+{
+    return parentItem;
+}
+
 bool TreeItem::removeChildren(int position, int count)
 {
     if (position < 0 || position + count > childItems.size())

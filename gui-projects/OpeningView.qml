@@ -52,12 +52,10 @@ Window{
         // Sides
         RowLayout {
             Label {
-                id: forSidesText
                 width: 200
                 text: qsTr("For sides:")
                 Layout.preferredHeight: 20
                 Layout.preferredWidth: 80
-                font.pixelSize: 12
             }
 
             GroupBox {
@@ -78,62 +76,27 @@ Window{
                     }
                 }
             }
-        }
 
+            RowLayout {
+                enabled: false
+                Label {
+                    width: 200
+                    text: qsTr("Values:")
+                    horizontalAlignment: Text.AlignRight
+                    Layout.preferredHeight: 20
+                    Layout.preferredWidth: 80
+                }
+                CheckBox {
+                    id: showLearningValueCheckBox
+                    text: qsTr("Show learnt value")
+                    onCheckedChanged: updateUI()
+                }
+            }
+        }
 
         SplitView {
             Layout.fillWidth: true
             Layout.fillHeight: true
-
-//            Component {
-//                id :  spinBoxDelegate
-//                Item {
-//                    id : spinBoxDelegateItem
-//                    SpinBox {
-//                        id: spinBoxDelegateSpin
-//                        Layout.preferredHeight: 20
-//                        Layout.preferredWidth: 120
-//                        value: styleData.value
-//                        visible: false
-//                        onEditingFinished: {
-//                            //onClicked: state = 'Standard';
-//                            spinBoxDelegateLabel.text = value;
-//                            spinBoxDelegateItem.state = 'Standard';
-//                            print("spinBoxDelegateSpin onEditingFinished")
-//                        }
-//                    }
-//                    Label {
-//                        id: spinBoxDelegateLabel
-//                        text: styleData.value
-//                        MouseArea {
-//                            anchors.fill: parent
-//                            propagateComposedEvents: true
-//                            onClicked: {
-//                                console.log("clicked blue")
-//                                mouse.accepted = true
-//                            }
-
-//                            onDoubleClicked: {
-//                                spinBoxDelegateItem.state = 'Details';
-//                                spinBoxDelegateSpin.forceActiveFocus()
-//                            }
-//                        }
-//                    }
-//                    states:  [
-//                        State {
-//                            name: "Details"
-//                            PropertyChanges { target: spinBoxDelegateSpin; visible: true }
-//                            PropertyChanges { target: spinBoxDelegateLabel; visible: false }
-//                        },
-//                        State {
-//                            name: "Standard"
-//                            PropertyChanges { target: spinBoxDelegateSpin; visible: false }
-//                            PropertyChanges { target: spinBoxDelegateLabel; visible: true }
-//                        }
-//                    ]
-//                }
-//            }
-
 
             TreeView {
                 id: treeView
@@ -168,7 +131,6 @@ Window{
                     title: "Title"
                 }
 
-//                itemDelegate: spinBoxDelegate
 //                itemDelegate: Item {
 //                    Text {
 //                        anchors.verticalCenter: parent.verticalCenter
@@ -179,30 +141,56 @@ Window{
 //                }
 
                 itemDelegate:
-//                    Component {
-//                    id :  spinBoxDelegate
                     Item {
                         id : spinBoxDelegateItem
-                        SpinBox {
-                            id: spinBoxDelegateSpin
-                            Layout.preferredHeight: 20
-                            Layout.preferredWidth: 120
-                            value: styleData.value
-                            visible: false
-                            onEditingFinished: {
-                                spinBoxDelegateLabel.text = value;
-                                spinBoxDelegateItem.state = 'Viewing';
+
+                        property bool inSelectedLine: styleData.value.indexOf('@') > 0
+                        property int separator: styleData.value.indexOf('/')
+                        property string moveString: {
+                            var s = styleData.value.replace("@", "")
+                            if (separator > 0) {
+                                s = s.substring(0, separator)
                             }
+                            return s
                         }
-                        Label {
-                            id: spinBoxDelegateLabel
-                            text: styleData.value
-                            MouseArea {
-                                anchors.fill: parent
-                                propagateComposedEvents: true
-                                onDoubleClicked: {
-                                    spinBoxDelegateItem.state = 'Editing';
-                                    spinBoxDelegateSpin.forceActiveFocus()
+                        property string weight: {
+                            var s = styleData.value.replace("@", "")
+                            if (separator > 0) {
+                                s = s.substring(separator + 1)
+                            } else {
+                                s = ""
+                            }
+                            return s
+                        }
+
+                        RowLayout {
+                            Label {
+                                id: spinBoxDelegateLabel
+                                text: moveString + (weight.length === 0 ? "" : ("/" + weight))
+                                color: styleData.selected ? "yellow" : inSelectedLine ? "blue" : (separator > 0 ? "green" : "gray")
+                                MouseArea {
+                                    anchors.fill: parent
+                                    propagateComposedEvents: true
+                                    onDoubleClicked: {
+                                        if (separator > 0) {
+                                            spinBoxDelegateItem.state = 'Editing';
+                                            spinBoxDelegateSpin.forceActiveFocus()
+                                        }
+                                    }
+                                }
+                            }
+
+                            SpinBox {
+                                id: spinBoxDelegateSpin
+                                Layout.preferredHeight: 20
+                                Layout.preferredWidth: 80
+                                value: weight
+                                visible: false
+                                onEditingFinished: {
+                                    console.log("SpinBox, onEditingFinished value = " + value)
+                                    weight = value
+                                    openingModel.updateValue(styleData.index, value, (saveToOpeningRadioButton.checked ? 0 : 1))
+                                    spinBoxDelegateItem.state = 'Viewing';
                                 }
                             }
                         }
@@ -210,16 +198,13 @@ Window{
                             State {
                                 name: "Editing"
                                 PropertyChanges { target: spinBoxDelegateSpin; visible: true }
-                                PropertyChanges { target: spinBoxDelegateLabel; visible: false }
                             },
                             State {
                                 name: "Viewing"
                                 PropertyChanges { target: spinBoxDelegateSpin; visible: false }
-                                PropertyChanges { target: spinBoxDelegateLabel; visible: true }
                             }
                         ]
                     }
-//                }
             }
 
             ColumnLayout {
@@ -230,10 +215,35 @@ Window{
                     Layout.fillHeight: true
                 }
 
+                Label {
+                    width: 200
+                    text: qsTr("Save modified values:")
+                    Layout.preferredHeight: 20
+                    Layout.preferredWidth: 80
+                }
+
+                GroupBox {
+                    enabled: false
+                    ColumnLayout {
+                        ExclusiveGroup { id: saveToGroup }
+                        RadioButton {
+                            id: saveToOpeningRadioButton
+                            text: qsTr("Save directly to opening file")
+                            checked: true
+                            exclusiveGroup: saveToGroup
+                        }
+
+                        RadioButton {
+                            id: saveToLearntRadioButton
+                            text: qsTr("Save to learnt file")
+                            exclusiveGroup: saveToGroup
+                        }
+                    }
+                }
+
                 Button {
                     id: collapseAllBtn
                     text: qsTr("Collapse all")
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     onClicked: {
                         for(var i = 0; i < openingModel.rowCount(); i++) {
                             var idx = openingModel.index(i, 0)
@@ -244,7 +254,6 @@ Window{
             }
         }
     }
-
 
     property bool working: false
 
