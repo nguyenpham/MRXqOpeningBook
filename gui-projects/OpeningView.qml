@@ -13,7 +13,7 @@ import OpeningTreeViewModel 1.0
 
 Window{
     id: myWindow
-    title: "Opening"
+    title: "Opening View & Edit"
     width: 800
     height: 600
     visible: true
@@ -223,7 +223,6 @@ Window{
                 }
 
                 GroupBox {
-                    enabled: false
                     ColumnLayout {
                         ExclusiveGroup { id: saveToGroup }
                         RadioButton {

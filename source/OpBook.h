@@ -1,10 +1,27 @@
-//
-//  OpBook.hpp
-//  Opening
-//
-//  Created by Tony Pham on 4/3/18.
-//  Copyright © 2018 Softgaroo. All rights reserved.
-//
+
+/*
+ This file is part of MoonRiver Xiangqi Opening Book, distributed under MIT license.
+
+ Copyright (c) 2018 Nguyen Hong Pham
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
 
 #ifndef OpBook_hpp
 #define OpBook_hpp
@@ -76,19 +93,21 @@ namespace opening {
         }
 
     public:
+        // 32 bytes info
         u16 signature;
         u16 property;
         u32 reserveVar;
         i64 size[2];
         u8  reserve[8];
 
+        // info / copyright, write down actually 128 - 32 = 96 bytes
         char textInfo[128];
     };
 
-    class OpBook {
+    class OpBookCore {
     public:
-        OpBook();
-        virtual ~OpBook();
+        OpBookCore();
+        virtual ~OpBookCore();
 
         Move probe(const std::string& fen, MoveList* opMoveList = nullptr) const;
         Move probe(const int8_t* pieceList, Side side, MoveList* opMoveList = nullptr) const;
@@ -100,7 +119,9 @@ namespace opening {
         bool save(std::string path = "");
 
         i64 find(u64 key, int sd) const;
-        u16 getValue(u64 idx, int sd) const;
+        u16 getValueByIndex(u64 idx, int sd) const;
+
+        virtual int getValueByKey(u64 key, int sd) const;
 
         BookHeader* getHeader() {
             return &header;
@@ -110,9 +131,7 @@ namespace opening {
             return bookData[sd];
         }
 
-//        bool verifyData(OpeningBoard& board, int sd) const;
-
-        bool updateValue(u64 key, int value, Side side, int saveTo);
+        bool _updateValue(u64 key, int value, Side side);
 
     protected:
         Move _probe(OpeningBoard& board, MoveList* opMoveList = nullptr) const;
@@ -120,7 +139,6 @@ namespace opening {
         
     protected:
         BookHeader header;
-
         BookItem* bookData[2];
 
         i64 allocatedSizes[2];
@@ -128,6 +146,23 @@ namespace opening {
         std::string path;
     };
 
+    class OpBook : public OpBookCore {
+    public:
+        const std::string LearntFileExtension = ".xlo";
+
+        OpBook();
+        virtual ~OpBook();
+
+        bool load(const std::string& path);
+        bool updateValue(u64 key, int value, Side side, int saveTo);
+
+        virtual int getValueByKey(u64 key, int sd) const;
+        int getValueByKeyFromMainData(u64 key, int sd) const;
+        int getValueByKeyFromLearntData(u64 key, int sd) const;
+
+    protected:
+        OpBookCore* learntBook;
+    };
 }
 
 #endif /* OpBook_hpp */

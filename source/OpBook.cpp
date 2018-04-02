@@ -1,10 +1,27 @@
-//
-//  OpBook.cpp
-//  Opening
-//
-//  Created by Tony Pham on 4/3/18.
-//  Copyright © 2018 Softgaroo. All rights reserved.
-//
+
+/*
+ This file is part of MoonRiver Xiangqi Opening Book, distributed under MIT license.
+
+ Copyright (c) 2018 Nguyen Hong Pham
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
 
 #include "OpBook.h"
 #include "OpBoard.h"
@@ -12,14 +29,16 @@
 
 using namespace opening;
 
-OpBook::OpBook() :
+///////////////////////////////////////////////////////////////////////
+
+OpBookCore::OpBookCore() :
     path("")
 {
     assert(sizeof(BookItem) == 10);
     bookData[0] = bookData[1] = nullptr;
 }
 
-OpBook::~OpBook()
+OpBookCore::~OpBookCore()
 {
     if (bookData[0]) {
         for(int i = 0; i < 2; i++) {
@@ -29,8 +48,7 @@ OpBook::~OpBook()
     }
 }
 
-///////////////////////////////////////////////////////////////////////
-bool OpBook::load(const std::string& path_) {
+bool OpBookCore::load(const std::string& path_) {
     path = path_;
 
     std::ifstream file(path, std::ios::binary);
@@ -64,105 +82,7 @@ bool OpBook::load(const std::string& path_) {
     return ok;
 }
 
-//bool OpBook::verifyData() const
-//{
-//    if (!header.isValid() || header.size[0] < 0 || header.size[1] < 0 || header.size[0] + header.size[1] <= 0) {
-//        std::cerr << "Error verifyData" << std::endl;
-//        return false;
-//    }
-
-//    auto startTime = time(NULL);
-
-//    for(int sd = 1; sd < 2; sd++) {
-//        if (!verifyData(sd)) {
-//            return false;
-//        }
-//    }
-
-//    if (openingVerbose) {
-//        auto elapsed_secs = std::max(1, (int)(time(NULL) - startTime));
-//        std::cout << "verify successfully, elapsed (s): " << elapsed_secs << std::endl;
-//    }
-//    return true;
-//}
-
-//bool OpBook::verifyData(int sd) const
-//{
-//    if (header.size[sd] == 0) {
-//        return true;
-//    }
-
-
-//    u16 maxVal = 0;
-//    for (i64 idx = 0, prevKey = 0; idx < header.size[sd]; idx++) {
-//        auto p = bookData[sd] + idx;
-//        if (prevKey >= p->key() || p->value == 0) {
-//            std::cerr << "Error verifyData" << std::endl;
-//            return false;
-//        }
-//        prevKey = p->key();
-//        maxVal = std::max(maxVal, p->value);
-//    }
-
-//    std::cout << "verifyData, maxVal = " << maxVal << std::endl;
-
-//    OpeningBoard board;
-//    board.setFen("");
-//    board.show();
-
-//    for (i64 idx = 0; idx < header.size[sd]; idx++) {
-//        auto p = bookData[sd] + idx;
-//        p->value = 0;
-//    }
-
-//    verifyData(board, sd);
-
-
-//    i64 reachableCnt = 0;
-//    for (i64 idx = 0; idx < header.size[sd]; idx++) {
-//        auto p = bookData[sd] + idx;
-//        if (p->value > 0) {
-//            reachableCnt++;
-//        }
-//    }
-
-//    std::cout << "verifyData, sd = " << sd << ", reachableCnt = " << reachableCnt << " of " << header.size[sd] << std::endl;
-//    return true;
-//}
-
-//bool OpBook::verifyData(OpeningBoard& board, int sd) const
-//{
-//    auto side = board.side;
-//    auto sameSide = static_cast<int>(side) == sd;
-//    if (!sameSide) {
-//        auto idx = find(board.key(), sd);
-//        if (idx < 0) {
-//            return false;
-//        }
-
-//        if (bookData[sd][idx].value) {
-//            return true;
-//        }
-
-//        bookData[sd][idx].value = 1;
-//    }
-
-//    MoveList moveList;
-//    board.gen(moveList, board.side);
-
-//    for(int i = 0; i < moveList.end; i++) {
-//        auto move = moveList.list[i];
-//        board.make(move);
-//        if (!board.isIncheck(side)) {
-//            verifyData(board, sd);
-//        }
-//        board.takeBack();
-//    }
-
-//    return true;
-//}
-
-bool OpBook::save(std::string path_) {
+bool OpBookCore::save(std::string path_) {
     if (path_.empty()) {
         path_ = path;
     }
@@ -197,17 +117,26 @@ bool OpBook::save(std::string path_) {
     return ok;
 }
 
-u16 OpBook::getValue(u64 idx, int sd) const
+u16 OpBookCore::getValueByIndex(u64 idx, int sd) const
 {
     return bookData[sd][idx].value;
 }
 
-i64 OpBook::find(u64 key, int sd) const
+int OpBookCore::getValueByKey(u64 key, int sd) const
+{
+    auto idx = find(key, sd);
+    if (idx >= 0) {
+        return bookData[sd][idx].value;
+    }
+    return -1;
+}
+
+i64 OpBookCore::find(u64 key, int sd) const
 {
     return find(key, (const char*)bookData[sd], header.size[sd], sizeof(BookItem));
 }
 
-i64 OpBook::find(u64 key, const char* data, i64 itemCount, int itemSize)
+i64 OpBookCore::find(u64 key, const char* data, i64 itemCount, int itemSize)
 {
     i64 i = 0, j = itemCount - 1;
 
@@ -225,14 +154,14 @@ i64 OpBook::find(u64 key, const char* data, i64 itemCount, int itemSize)
     return -1;
 }
 
-Move OpBook::probe(const std::string& fen, MoveList* opMoveList) const
+Move OpBookCore::probe(const std::string& fen, MoveList* opMoveList) const
 {
     OpeningBoard board;
     board.setFen(fen);
     return probe(board);
 }
 
-Move OpBook::probe(const int8_t* pieceList, Side side, MoveList* opMoveList) const
+Move OpBookCore::probe(const int8_t* pieceList, Side side, MoveList* opMoveList) const
 {
     OpeningBoard board;
     board.pieceList_setupBoard(pieceList);
@@ -240,7 +169,7 @@ Move OpBook::probe(const int8_t* pieceList, Side side, MoveList* opMoveList) con
     return probe(board, opMoveList);
 }
 
-Move OpBook::probe(const MoveList& moveList, MoveList* opMoveList) const
+Move OpBookCore::probe(const MoveList& moveList, MoveList* opMoveList) const
 {
     OpeningBoard board;
     board.setFen("");
@@ -251,14 +180,14 @@ Move OpBook::probe(const MoveList& moveList, MoveList* opMoveList) const
     return probe(board, opMoveList);
 }
 
-Move OpBook::probe(const std::vector<Piece> pieceVec, Side side, MoveList* opMoveList) const
+Move OpBookCore::probe(const std::vector<Piece> pieceVec, Side side, MoveList* opMoveList) const
 {
     OpeningBoard board;
     board.setup(pieceVec, side);
     return probe(board, opMoveList);
 }
 
-Move OpBook::probe(OpeningBoard& board, MoveList* opMoveList) const
+Move OpBookCore::probe(OpeningBoard& board, MoveList* opMoveList) const
 {
     auto bestmove = _probe(board, opMoveList);
 
@@ -282,7 +211,7 @@ Move OpBook::probe(OpeningBoard& board, MoveList* opMoveList) const
     return bestmove;
 }
 
-Move OpBook::_probe(OpeningBoard& board, MoveList* opMoveList) const
+Move OpBookCore::_probe(OpeningBoard& board, MoveList* opMoveList) const
 {
     auto side = board.side;
     int sd = static_cast<int>(side);
@@ -304,9 +233,8 @@ Move OpBook::_probe(OpeningBoard& board, MoveList* opMoveList) const
         auto move = moveList.list[i];
         board.make(move);
         if (!board.isIncheck(side)) {
-            auto idx = find(board.key(), sd);
-            if (idx >= 0) {
-                auto value = bookData[sd][idx].value;
+            auto value = getValueByKey(board.key(), sd);
+            if (value >= 0) {
                 move.score = value;
                 if (opMoveList) {
                     opMoveList->add(move);
@@ -316,6 +244,18 @@ Move OpBook::_probe(OpeningBoard& board, MoveList* opMoveList) const
                     bestmove = move;
                 }
             }
+//            auto idx = find(board.key(), sd);
+//            if (idx >= 0) {
+//                auto value = bookData[sd][idx].value;
+//                move.score = value;
+//                if (opMoveList) {
+//                    opMoveList->add(move);
+//                }
+//                if (value > curValue) {
+//                    curValue = value;
+//                    bestmove = move;
+//                }
+//            }
         }
         board.takeBack();
     }
@@ -323,8 +263,7 @@ Move OpBook::_probe(OpeningBoard& board, MoveList* opMoveList) const
     return bestmove;
 }
 
-
-bool OpBook::updateValue(u64 key, int value, Side side, int saveTo)
+bool OpBookCore::_updateValue(u64 key, int value, Side side)
 {
     int sd = static_cast<int>(side);
     i64 idx = find(key, sd);
@@ -337,4 +276,77 @@ bool OpBook::updateValue(u64 key, int value, Side side, int saveTo)
     }
 
     return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+
+OpBook::OpBook()
+    : OpBookCore(),
+      learntBook(nullptr)
+{}
+
+OpBook::~OpBook()
+{
+    if (learntBook) {
+        delete learntBook;
+        learntBook = nullptr;
+    }
+}
+
+bool OpBook::load(const std::string& path)
+{
+    if (learntBook) {
+        delete learntBook;
+        learntBook = nullptr;
+    }
+
+    auto r = OpBookCore::load(path);
+
+    // Load learnt file
+    if (r) {
+        std::string learntPath = path;
+
+        auto dot = learntPath.find_last_of(".");
+        if (dot > 0) {
+            learntPath = learntPath.substr(0, dot);
+        }
+        learntPath += LearntFileExtension;
+
+        learntBook = new OpBookCore();
+        if (!learntBook->load(learntPath)) {
+            delete learntBook;
+            learntBook = nullptr;
+        }
+    }
+
+    return r;
+}
+
+bool OpBook::updateValue(u64 key, int value, Side side, int saveTo)
+{
+    if (saveTo == 0) {
+        return _updateValue(key, value, side);
+    }
+
+    return learntBook ? learntBook->_updateValue(key, value, side) : false;
+}
+
+
+int OpBook::getValueByKeyFromMainData(u64 key, int sd) const
+{
+    return OpBookCore::getValueByKey(key, sd);
+}
+
+
+int OpBook::getValueByKeyFromLearntData(u64 key, int sd) const
+{
+    return learntBook ? learntBook->getValueByKey(key, sd) : -1;
+}
+
+
+int OpBook::getValueByKey(u64 key, int sd) const
+{
+    int r = getValueByKeyFromLearntData(key, sd);
+    return r >= 0 ? r : getValueByKeyFromMainData(key, sd);
 }
